@@ -18,11 +18,11 @@ def init_connection():
 
 supabase = init_connection()
 
-# 2. INICIALIZAR MEMORIA (Datos y Jugadores Restaurados)
+# 2. INICIALIZAR MEMORIA
 if 'scouting_db' not in st.session_state:
     st.session_state['scouting_db'] = [
-        {"ID": 1, "Nombre": "Alisana Yirajang", "Edad": 21, "Club": "Slovan", "Valor": "€800k", "Overall": 85, "Viabilidad": "🔴 Baja", "Posición": "Extremo", "Foto": None},
-        {"ID": 2, "Nombre": "Fidel Ambriz", "Edad": 21, "Club": "Monterrey", "Valor": "€4.5M", "Overall": 87, "Viabilidad": "🟡 Media", "Posición": "Medio", "Foto": None}
+        {"ID": 1, "Nombre": "Alisana Yirajang", "Edad": 21, "Club": "Slovan", "Liga": "🇸🇰 Liga Eslovaquia", "Valor": "€800k", "Overall": 85, "Viabilidad": "🔴 Baja", "Posición": "Extremo", "Foto": None},
+        {"ID": 2, "Nombre": "Fidel Ambriz", "Edad": 21, "Club": "Monterrey", "Liga": "🇲🇽 Liga MX", "Valor": "€4.5M", "Overall": 87, "Viabilidad": "🟡 Media", "Posición": "Medio", "Foto": None}
     ]
 
 if 'equipo_ignition' not in st.session_state:
@@ -32,10 +32,27 @@ if 'equipo_ignition' not in st.session_state:
         {"ID": 5, "Nombre": "Kevin Mora", "Edad": 19, "Club": "León", "Liga": "🇲🇽 Liga MX", "Status": "FIRMADO 🟡", "Posición": "Lateral Derecho", "Foto": None},
         {"ID": 6, "Nombre": "Miguel Mendoza", "Edad": 17, "Club": "León", "Liga": "🇲🇽 Liga MX U-17", "Status": "FIRMADO 🟡", "Posición": "Extremo", "Foto": None},
         {"ID": 7, "Nombre": "Sergio Luna", "Edad": 19, "Club": "León", "Liga": "🇲🇽 Liga MX U-19", "Status": "FIRMADO 🟡", "Posición": "Defensa Central", "Foto": None},
-        {"ID": 8, "Nombre": "Bryan Destin", "Edad": 18, "Club": "CT United", "Liga": "🇺🇸 MLS", "Status": "OBJETIVO 🔵", "Posición": "Delantero", "Foto": None}
+        {"ID": 8, "Nombre": "Bryan Destin", "Edad": 18, "Club": "CT United", "Liga": "🇺🇸 MLS Next Pro", "Status": "OBJETIVO 🔵", "Posición": "Delantero", "Foto": None}
     ]
 
-# 3. LAS 30 MÉTRICAS QUIRÚRGICAS (Diccionario Completo)
+# 3. DICCIONARIOS DE LIGAS Y EQUIPOS (MOTOR DINÁMICO)
+LIGAS_MUNDIALES = [
+    "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-23", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
+    "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", 
+    "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal", "🇸🇪 Allsvenskan", "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
+    "🇺🇸 MLS", "🇺🇸 MLS Next Pro", "🇺🇸 USL", "🇦🇷 Primera División Argentina", "🇧🇷 Brasileirao", 
+    "🇨🇴 Primera División Colombia", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile",
+    "🇫🇷 Ligue 1", "🇮🇹 Serie A", "🇩🇪 Bundesliga", "🇳🇱 Eredivisie"
+]
+
+# Base de datos inicial de equipos (Agregaremos los miles que faltan después)
+EQUIPOS_POR_LIGA = {
+    "🇲🇽 Liga MX": ["América", "Atlas", "Atlético San Luis", "Cruz Azul", "Chivas", "FC Juárez", "León", "Mazatlán", "Monterrey", "Necaxa", "Pachuca", "Puebla", "Pumas", "Querétaro", "Santos Laguna", "Tigres", "Tijuana", "Toluca"],
+    "🇸🇪 Allsvenskan": ["AIK", "Brommapojkarna", "Djurgården", "Elfsborg", "GAIS", "Göteborg", "Halmstad", "Hammarby", "Häcken", "Kalmar FF", "Malmö FF", "Mjällby", "Norrköping", "Sirius", "Värnamo", "Västerås SK"],
+    "🇵🇹 Liga Portugal": ["Benfica", "Porto", "Sporting CP", "Braga", "Vitória de Guimarães", "Moreirense", "Arouca", "Famalicão", "Casa Pia", "Farense", "Rio Ave", "Gil Vicente", "Estoril", "Estrela", "Boavista", "Nacional", "Santa Clara", "AVS"],
+}
+
+# 4. LAS 30 MÉTRICAS QUIRÚRGICAS (Diccionario Completo)
 def obtener_metricas(posicion):
     if posicion == "Portero":
         return {
@@ -80,20 +97,14 @@ def obtener_metricas(posicion):
             "Pilar 4: Físico y Defensa (7)": ["Minutos", "Presión Exitosa Alta", "Recuperaciones Altas", "Sprints", "Distancia Recorrida", "Velocidad Máxima", "Tarjetas Amarillas"]
         }
 
-# 4. FUNCIÓN: MOSTRAR PERFIL Y BOTÓN DE BORRADO
-def mostrar_perfil_jugador(jugador, lista_origen, key_prefix):
+# 5. FUNCIÓN: MOSTRAR PERFIL Y EDICIÓN
+def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
     st.markdown("---")
-    c_title, c_btn = st.columns([4, 1])
-    c_title.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
-    
-    # 4.1 BOTÓN DE ELIMINAR
-    if c_btn.button("🗑️ Eliminar Perfil", key=f"del_{key_prefix}_{jugador['ID']}"):
-        st.session_state[lista_origen] = [j for j in st.session_state[lista_origen] if j['ID'] != jugador['ID']]
-        st.rerun()
+    st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
     
     col_img, col_info, col_radar = st.columns([1, 2, 2])
     with col_img:
-        # Mostrar foto si se subió, si no, placeholder
+        # Foto visible u opcional genérica
         if jugador.get('Foto'):
             st.image(jugador['Foto'], width=150)
         else:
@@ -101,7 +112,9 @@ def mostrar_perfil_jugador(jugador, lista_origen, key_prefix):
         
     with col_info:
         st.markdown(f"**Posición:** {jugador['Posición']}")
-        st.markdown(f"**Club:** {jugador['Club']} | **Edad:** {jugador['Edad']}")
+        st.markdown(f"**Club:** {jugador['Club']} | **Liga:** {jugador.get('Liga', 'N/D')}")
+        st.markdown(f"**Edad:** {jugador['Edad']}")
+        if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
         categorias = ['Ataque', 'Creación', 'Defensa', 'Físico', 'Posesión']
@@ -112,18 +125,53 @@ def mostrar_perfil_jugador(jugador, lista_origen, key_prefix):
         ax.plot(angulos, valores, color='#1A2B4C'); ax.fill(angulos, valores, color='#C8A165', alpha=0.5)
         fig.patch.set_facecolor('none'); ax.set_facecolor('none'); ax.set_yticklabels([])
         st.pyplot(fig, use_container_width=True)
-        
-    # 4.2 LAS 30 MÉTRICAS QUIRÚRGICAS (Dependientes de la posición)
+
+    # MATRIZ QUIRÚRGICA
     st.markdown(f"### Matriz de Rendimiento p/90 ({jugador['Posición']})")
     metricas_q = obtener_metricas(jugador['Posición'])
     tabs = st.tabs(list(metricas_q.keys()))
     for i, (pilar, lista_metricas) in enumerate(metricas_q.items()):
         with tabs[i]:
-            cols = st.columns(4) # 4 columnas para que quepan mejor las 7-8 métricas
+            cols = st.columns(4)
             for j, metrica in enumerate(lista_metricas):
                 cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165;'>API</span></div>", unsafe_allow_html=True)
+                
+    st.write("")
+    
+    # MÓDULO DE EDICIÓN Y FOTO 
+    with st.expander(f"✏️ Editar Perfil y Subir Foto de {jugador['Nombre']}"):
+        st.caption("Modifica la información incorrecta o añade su fotografía de perfil.")
+        c_ed1, c_ed2 = st.columns(2)
+        nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
+        nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
+        nueva_pos = c_ed1.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"], index=["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"].index(jugador['Posición']), key=f"pos_{jugador['ID']}")
+        
+        # Selección Dinámica de Liga y Equipo en Edición
+        nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_{jugador['ID']}")
+        if nueva_liga in EQUIPOS_POR_LIGA:
+            nuevo_club = c_ed2.selectbox("Club / Equipo", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_{jugador['ID']}")
+        else:
+            nuevo_club = c_ed2.text_input("Club / Equipo (Escribir)", value=jugador['Club'], key=f"cl_txt_{jugador['ID']}")
+            
+        nueva_foto = st.file_uploader("Subir o Actualizar Foto (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
+        
+        col_btn1, col_btn2 = st.columns([1, 1])
+        if col_btn1.button("💾 Guardar Cambios", key=f"sv_{jugador['ID']}"):
+            st.session_state[lista_origen][idx_origen]['Nombre'] = nuevo_nom
+            st.session_state[lista_origen][idx_origen]['Edad'] = nueva_edad
+            st.session_state[lista_origen][idx_origen]['Posición'] = nueva_pos
+            st.session_state[lista_origen][idx_origen]['Liga'] = nueva_liga
+            st.session_state[lista_origen][idx_origen]['Club'] = nuevo_club
+            if nueva_foto:
+                st.session_state[lista_origen][idx_origen]['Foto'] = nueva_foto.getvalue()
+            st.success("Perfil actualizado.")
+            st.rerun()
+            
+        if col_btn2.button("🗑️ Eliminar Perfil", key=f"dl_{jugador['ID']}"):
+            st.session_state[lista_origen].pop(idx_origen)
+            st.rerun()
 
-# 5. ESTÉTICA
+# 6. ESTÉTICA
 st.markdown("""
     <style>
     [data-testid="stSidebar"] {background-color: #1A2B4C !important;}
@@ -133,9 +181,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 6. NAVEGACIÓN Y LOGIN
-LIGAS_MUNDIALES = ["🇲🇽 Liga MX", "🇪🇸 La Liga", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🇺🇸 MLS", "🇦🇷 Primera División Argentina", "🇧🇷 Brasileirao", "🇫🇷 Ligue 1", "🇮🇹 Serie A", "🇩🇪 Bundesliga"]
-
+# 7. SISTEMA DE LOGIN Y NAVEGACIÓN
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
@@ -172,30 +218,11 @@ else:
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         df_scouting = pd.DataFrame(st.session_state['scouting_db'])
-        seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Valor", "Overall", "Viabilidad", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
+        seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Overall", "Viabilidad", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
         
         if len(seleccion.selection.rows) > 0:
             idx = seleccion.selection.rows[0]
-            jugador_seleccionado = st.session_state['scouting_db'][idx]
-            mostrar_perfil_jugador(jugador_seleccionado, 'scouting_db', 'sc')
-            
-        st.markdown("---")
-        with st.expander("➕ Añadir Jugador a Base de Scouting"):
-            with st.form("nuevo_scouting", clear_on_submit=True):
-                c1, c2 = st.columns(2)
-                n_nombre = c1.text_input("Nombre")
-                n_edad = c1.number_input("Edad", 15, 40, 20)
-                n_club = c1.text_input("Club")
-                n_posicion = c2.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
-                n_valor = c2.text_input("Valor de Mercado")
-                n_foto = st.file_uploader("Subir Foto de Perfil (jpg, png)", type=['jpg', 'png', 'jpeg']) # SUBIDA DE ARCHIVO REAL
-                
-                if st.form_submit_button("Guardar Jugador"):
-                    # Simulamos el guardado de la foto leyéndola a memoria
-                    foto_data = n_foto.getvalue() if n_foto else None 
-                    nuevo = {"ID": len(st.session_state['scouting_db']) + 100, "Nombre": n_nombre, "Edad": n_edad, "Club": n_club, "Valor": n_valor, "Overall": 70, "Viabilidad": "🟡 Media", "Posición": n_posicion, "Foto": foto_data}
-                    st.session_state['scouting_db'].append(nuevo)
-                    st.rerun()
+            mostrar_perfil_jugador(st.session_state['scouting_db'][idx], 'scouting_db', idx)
 
     # MÓDULO 2: EQUIPO IGNITION
     elif opcion == "Equipo Ignition":
@@ -205,57 +232,45 @@ else:
         
         if len(seleccion_eq.selection.rows) > 0:
             idx_eq = seleccion_eq.selection.rows[0]
-            jugador_eq = st.session_state['equipo_ignition'][idx_eq]
-            mostrar_perfil_jugador(jugador_eq, 'equipo_ignition', 'eq')
+            mostrar_perfil_jugador(st.session_state['equipo_ignition'][idx_eq], 'equipo_ignition', idx_eq)
 
-        st.markdown("---")
-        with st.expander("➕ Añadir Jugador a Equipo Ignition"):
-            with st.form("nuevo_equipo", clear_on_submit=True):
-                c1, c2 = st.columns(2)
-                e_nombre = c1.text_input("Nombre Completo")
-                e_edad = c1.number_input("Edad", 15, 45, 20)
-                e_posicion = c1.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
-                e_status = c1.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"])
-                e_liga = c2.selectbox("Liga", LIGAS_MUNDIALES)
-                e_club = c2.text_input("Club Actual")
-                e_foto = st.file_uploader("Subir Foto de Perfil (jpg, png)", type=['jpg', 'png', 'jpeg']) # SUBIDA DE ARCHIVO REAL
-                
-                if st.form_submit_button("Registrar en Equipo Ignition"):
-                    foto_data = e_foto.getvalue() if e_foto else None
-                    nuevo_eq = {"ID": len(st.session_state['equipo_ignition']) + 100, "Nombre": e_nombre, "Edad": e_edad, "Posición": e_posicion, "Club": e_club, "Liga": e_liga, "Status": e_status, "Foto": foto_data}
-                    st.session_state['equipo_ignition'].append(nuevo_eq)
-                    st.rerun() 
-
-    # MÓDULO 3: INGRESO DE DATA 
+    # MÓDULO 3: INGRESO DE DATA (CON MOTOR DE EQUIPO DINÁMICO)
     elif opcion == "Ingreso de Data (Partidos)":
         st.title("📥 Registro Manual de Estadísticas")
-        with st.form("form_partido"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.text_input("Nombre del Jugador")
-                st.selectbox("🏆 Torneo", LIGAS_MUNDIALES)
-                st.selectbox("📍 Posición (Define las métricas base)", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"]) # AÑADIDO
-            with col2:
-                st.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)])
-                st.checkbox("Convocatoria sin minutos (Solo experiencia)")
-                
-            st.markdown("#### Datos del Partido")
-            c1, c2, c3, c4 = st.columns(4)
-            with c1: 
-                st.number_input("Minutos Jugados", 0, 120, 90)
-                st.number_input("Goles", 0, 10, 0)
-            with c2: 
-                st.number_input("Asistencias", 0, 10, 0)
-                st.number_input("Tiros a Puerta", 0, 20, 0)
-            with c3:
-                st.number_input("Pases Clave", 0, 20, 0)
-                st.number_input("Duelos Ganados", 0, 40, 0)
-            with c4:
-                st.number_input("Intercepciones", 0, 30, 0)
-                st.number_input("Faltas Cometidas", 0, 20, 0)
-                
-            if st.form_submit_button("Guardar en Base de Datos"):
-                st.success("¡Estadísticas registradas exitosamente para este partido!")
+        st.caption("Selecciona la liga para desplegar automáticamente los equipos registrados.")
+        
+        c1, c2 = st.columns(2)
+        n_jugador = c1.text_input("Nombre del Jugador")
+        n_posicion = c1.selectbox("📍 Posición (Define las métricas)", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+        
+        n_liga = c2.selectbox("🏆 Competición / Torneo", LIGAS_MUNDIALES)
+        # 🧠 MAGIA DINÁMICA DE EQUIPOS
+        if n_liga in EQUIPOS_POR_LIGA:
+            n_equipo = c2.selectbox("🛡️ Equipo", EQUIPOS_POR_LIGA[n_liga])
+        else:
+            n_equipo = c2.text_input("🛡️ Equipo (Escribir nombre)")
+            
+        n_jornada = c1.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)])
+        c2.write("<br>", unsafe_allow_html=True)
+        n_conv = c2.checkbox("Convocatoria sin minutos (Solo experiencia)")
+            
+        st.markdown("#### Datos del Partido")
+        cd1, cd2, cd3, cd4 = st.columns(4)
+        with cd1: 
+            v_minutos = st.number_input("Minutos Jugados", 0, 120, 90)
+            v_goles = st.number_input("Goles", 0, 10, 0)
+        with cd2: 
+            v_asis = st.number_input("Asistencias", 0, 10, 0)
+            v_tiros = st.number_input("Tiros a Puerta", 0, 20, 0)
+        with cd3:
+            v_pases = st.number_input("Pases Clave", 0, 20, 0)
+            v_duelos = st.number_input("Duelos Ganados", 0, 40, 0)
+        with cd4:
+            v_intercep = st.number_input("Intercepciones", 0, 30, 0)
+            v_faltas = st.number_input("Faltas Cometidas", 0, 20, 0)
+            
+        if st.button("Guardar Estadísticas en Base de Datos"):
+            st.success(f"¡Estadísticas de {n_jugador} con el {n_equipo} registradas exitosamente!")
 
     else:
         st.info(f"Módulo de {opcion} en construcción.")

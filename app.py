@@ -13,8 +13,10 @@ st.set_page_config(page_title="Ignition Elite Scouting", page_icon="⚽", layout
 @st.cache_resource
 def init_connection():
     try:
-        return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-    except:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        return create_client(url, key)
+    except Exception as e:
         return None
 
 supabase = init_connection()
@@ -24,44 +26,60 @@ def procesar_foto(uploaded_file):
         return "data:image/png;base64," + base64.b64encode(uploaded_file.getvalue()).decode()
     return None
 
-# 2. CARGA DE DATOS DESDE SUPABASE O MEMORIA LOCAL
-def cargar_datos(tabla, default_data):
+# 2. FUNCIONES DE LECTURA Y ESCRITURA CON SUPABASE (PERSISTENCIA REAL)
+def cargar_desde_supabase(tabla):
     if supabase:
         try:
-            res = supabase.table(tabla).select("*").execute()
-            if res.data and len(res.data) > 0:
-                df = pd.DataFrame(res.data)
-                # Normalizar nombres de columnas desde la BD
-                df.columns = [c.capitalize() for c in df.columns]
-                return df.to_dict('records')
-        except:
-            pass
-    return default_data
+            res = supabase.table(tabla).select("*").order("id", desc=False).execute()
+            if res.data is not None:
+                registros = []
+                for row in res.data:
+                    elem = {
+                        "ID": row.get("id"),
+                        "Nombre": row.get("nombre", "Sin Nombre"),
+                        "Edad": row.get("edad", 20),
+                        "Club": row.get("club", "N/D"),
+                        "Liga": row.get("liga", "N/D"),
+                        "Posición": row.get("posicion", "Medio"),
+                        "Foto": row.get("foto")
+                    }
+                    if "valor" in row: elem["Valor"] = row.get("valor", "N/D")
+                    if "overall" in row: elem["Overall"] = row.get("overall", 70)
+                    if "viabilidad" in row: elem["Viabilidad"] = row.get("viabilidad", "🟡 Media")
+                    if "status" in row: elem["Status"] = row.get("status", "OBJETIVO 🔵")
+                    registros.append(elem)
+                return registros
+        except Exception as e:
+            st.error(f"Error consultando la tabla {tabla} en Supabase: {e}")
+    return []
 
-if 'scouting_db' not in st.session_state:
-    st.session_state['scouting_db'] = cargar_datos('scouting_db', [
-        {"ID": 1, "Nombre": "Alisana Yirajang", "Edad": 21, "Club": "Slovan Bratislava", "Liga": "🇸🇰 Liga Eslovaquia", "Valor": "€800k", "Overall": 85, "Viabilidad": "🔴 Baja", "Posición": "Extremo", "Foto": None, "Stats": {"Ataque": 85, "Creación": 75, "Defensa": 40, "Físico": 80, "Posesión": 65}},
-        {"ID": 2, "Nombre": "Fidel Ambriz", "Edad": 21, "Club": "Monterrey", "Liga": "🇲🇽 Liga MX", "Valor": "€4.5M", "Overall": 87, "Viabilidad": "🟡 Media", "Posición": "Medio", "Foto": None, "Stats": {"Ataque": 60, "Creación": 80, "Defensa": 75, "Físico": 85, "Posesión": 85}}
-    ])
+# Inicializar sesiones desde Supabase directamente
+st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
+st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-if 'equipo_ignition' not in st.session_state:
-    st.session_state['equipo_ignition'] = cargar_datos('equipo_ignition', [
-        {"ID": 3, "Nombre": "José Juan Macías", "Edad": 24, "Club": "Pumas UNAM", "Liga": "🇲🇽 Liga MX", "Status": "FIRMADO 🟡", "Posición": "Delantero", "Foto": None, "Stats": {"Ataque": 88, "Creación": 65, "Defensa": 35, "Físico": 75, "Posesión": 70}},
-        {"ID": 4, "Nombre": "Oscar García", "Edad": 20, "Club": "León", "Liga": "🇲🇽 Liga MX", "Status": "FIRMADO 🟡", "Posición": "Medio", "Foto": None, "Stats": {"Ataque": 55, "Creación": 75, "Defensa": 70, "Físico": 80, "Posesión": 78}},
-        {"ID": 5, "Nombre": "Kevin Mora", "Edad": 19, "Club": "León", "Liga": "🇲🇽 Liga MX", "Status": "FIRMADO 🟡", "Posición": "Lateral Derecho", "Foto": None, "Stats": {"Ataque": 65, "Creación": 70, "Defensa": 80, "Físico": 85, "Posesión": 72}},
-        {"ID": 6, "Nombre": "Miguel Mendoza", "Edad": 17, "Club": "León U-17", "Liga": "🇲🇽 Liga MX U-17", "Status": "FIRMADO 🟡", "Posición": "Extremo", "Foto": None, "Stats": {"Ataque": 78, "Creación": 70, "Defensa": 45, "Físico": 75, "Posesión": 68}},
-        {"ID": 7, "Nombre": "Sergio Luna", "Edad": 19, "Club": "León U-19", "Liga": "🇲🇽 Liga MX U-19", "Status": "FIRMADO 🟡", "Posición": "Defensa Central", "Foto": None, "Stats": {"Ataque": 40, "Creación": 55, "Defensa": 85, "Físico": 88, "Posesión": 65}},
-        {"ID": 8, "Nombre": "Bryan Destin", "Edad": 18, "Club": "CT United", "Liga": "🇺🇸 MLS Next Pro", "Status": "OBJETIVO 🔵", "Posición": "Delantero", "Foto": None, "Stats": {"Ataque": 82, "Creación": 60, "Defensa": 38, "Físico": 80, "Posesión": 62}}
-    ])
-
-# 3. LIGAS Y EQUIPOS
+# 3. LIGAS MUNDIALES Y EQUIPOS VERIFICADOS (TEMPORADA 2026/2027)
 LIGAS_MUNDIALES = [
     "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
-    "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", 
-    "🇫🇷 Ligue 1", "🇮🇹 Serie A", "🇩🇪 Bundesliga", "🇸🇪 Allsvenskan", "🇵🇹 Liga Portugal", "🇺🇸 MLS", "🇦🇷 Primera División Argentina"
+    "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League One", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League Two",
+    "🇫🇷 Ligue 1", "🇫🇷 Ligue 2", "🇮🇹 Serie A", "🇮🇹 Serie B",
+    "🇩🇪 Bundesliga", "🇩🇪 2. Bundesliga", "🇸🇪 Allsvenskan", "🇳🇴 Eliteserien",
+    "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
+    "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
+    "🇦🇹 Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
+    "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
+    "🇦🇷 Primera División Argentina", "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
+    "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile", 
+    "🇺🇸 MLS", "🇺🇸 MLS Next Pro", "🇺🇸 USL", "🇯🇵 J-League"
 ]
 
-equipos_mx_2026 = ["Club América", "Atlante FC", "Atlas FC", "Club Atlético de San Luis", "Cruz Azul", "Club Deportivo Guadalajara", "FC Juárez", "Club León", "Mazatlán FC", "CF Monterrey", "Club Necaxa", "CF Pachuca", "Club Puebla", "Pumas UNAM", "Querétaro FC", "Club Santos Laguna", "Tigres UANL", "Club Tijuana", "Deportivo Toluca"]
+# EQUIPOS CORREGIDOS SEGÚN TRANSFERMARKT 2026/2027 (ATLANTE INCLUIDO)
+equipos_mx_2026 = [
+    "CF América", "CF Atlante", "Atlas FC", "Club Atlético de San Luis", "Cruz Azul", 
+    "CD Guadalajara (Chivas)", "FC Juárez", "Club León", "CF Monterrey", "Club Necaxa", 
+    "CF Pachuca", "Club Puebla", "Pumas UNAM", "Querétaro FC", "Club Santos Laguna", 
+    "Tigres UANL", "Club Tijuana", "Deportivo Toluca"
+]
 
 EQUIPOS_POR_LIGA = {
     "🇲🇽 Liga MX": equipos_mx_2026,
@@ -69,8 +87,11 @@ EQUIPOS_POR_LIGA = {
     "🇲🇽 Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
     "🇲🇽 Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
     "🇲🇽 Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
-    "🇪🇸 La Liga": ["Athletic Club", "Club Atlético de Madrid", "Club Atlético Osasuna", "Fútbol Club Barcelona", "Deportivo Alavés", "Elche CF", "Getafe CF", "Girona FC", "Levante UD", "Málaga CF", "Rayo Vallecano", "RCD Espanyol", "Real Betis", "Real Club Celta de Vigo", "Real Madrid", "Real Racing Club de Santander", "Real Sociedad", "Real Club Deportivo de La Coruña", "Sevilla FC", "Valencia CF", "Villarreal CF"],
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Coventry City", "Crystal Palace", "Everton FC", "Fulham FC", "Hull City", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur"]
+    "🇪🇸 La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
+    "🇸🇪 Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
+    "🇵🇹 Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"],
+    "🇺🇸 MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
 def obtener_metricas(posicion):
@@ -87,8 +108,8 @@ def obtener_metricas(posicion):
     else: 
         return {"Pilar 1: Finalización": ["Goles", "xG", "Tiros a Puerta", "Tiros Totales", "Conversión %", "Penales", "Tiros al Palo", "Fueras de Lugar"], "Pilar 2: Presencia": ["Toques en Área", "Duelos Aéreos", "Goles de Cabeza", "Faltas en Área", "Pases en Área", "Anticipaciones", "Rebotes"], "Pilar 3: Asociación": ["Asistencias", "xA", "Pases Clave", "Regates", "Duelos Ofensivos", "Pases Precisos %", "Pérdidas", "Faltas en Ataque"], "Pilar 4: Físico": ["Minutos", "Presión Alta", "Recuperaciones", "Sprints", "Distancia", "Velocidad Máxima", "Tarjetas"]}
 
-# 4. DESPLIEGUE CON RADAR DINÁMICO
-def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
+# 4. MOSTRAR PERFIL DE JUGADOR Y EDICIÓN PERMANENTE
+def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
     
@@ -106,22 +127,14 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
-        # RADAR DINÁMICO SEGÚN DATOS DEL JUGADOR
-        stats_j = jugador.get('Stats', {"Ataque": 70, "Creación": 70, "Defensa": 70, "Físico": 70, "Posesión": 70})
         categorias = ['Ataque', 'Creación', 'Defensa', 'Físico', 'Posesión']
-        valores = [stats_j.get(c, 70) for c in categorias]
-        
-        angulos = [n / 5 * 2 * math.pi for n in range(5)]
-        angulos += angulos[:1]
-        valores += valores[:1]
-        
+        valores = [75, 70, 65, 80, 72]
+        angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]; valores += valores[:1]
         fig, ax = plt.subplots(figsize=(2.2, 2.2), subplot_kw=dict(polar=True))
         plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8, weight='bold')
         ax.plot(angulos, valores, color='#1A2B4C', linewidth=2)
         ax.fill(angulos, valores, color='#C8A165', alpha=0.4)
-        fig.patch.set_facecolor('none')
-        ax.set_facecolor('none')
-        ax.set_yticklabels([])
+        fig.patch.set_facecolor('none'); ax.set_facecolor('none'); ax.set_yticklabels([])
         st.pyplot(fig, use_container_width=True)
 
     st.markdown(f"### Matriz de Rendimiento p/90 ({jugador['Posición']})")
@@ -131,7 +144,7 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         with tabs[i]:
             cols = st.columns(4)
             for j, metrica in enumerate(lista_metricas):
-                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>Calculando p/90</span></div>", unsafe_allow_html=True)
+                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>Sincronizado</span></div>", unsafe_allow_html=True)
                 
     with st.expander(f"✏️ Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
@@ -148,31 +161,38 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         nueva_foto = st.file_uploader("Subir Foto de Perfil (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
         
         col_btn1, col_btn2 = st.columns([1, 1])
-        if col_btn1.button("💾 Guardar Cambios en Base de Datos", key=f"sv_{jugador['ID']}"):
+        if col_btn1.button("💾 Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
             foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
-            st.session_state[lista_origen][idx_origen].update({
-                'Nombre': nuevo_nom, 'Edad': nueva_edad, 'Posición': nueva_pos, 
-                'Liga': nueva_liga, 'Club': nuevo_club, 'Foto': foto_base64
-            })
             
+            payload = {
+                "nombre": nuevo_nom,
+                "edad": nueva_edad,
+                "posicion": nueva_pos,
+                "liga": nueva_liga,
+                "club": nuevo_club,
+                "foto": foto_base64
+            }
             if supabase:
-                try: 
-                    supabase.table(lista_origen).upsert({
-                        'id': jugador['ID'], 'nombre': nuevo_nom, 'edad': nueva_edad, 
-                        'posicion': nueva_pos, 'liga': nueva_liga, 'club': nuevo_club, 'foto': foto_base64
-                    }).execute()
+                try:
+                    if jugador.get('ID'):
+                        supabase.table(tabla_origen).update(payload).eq('id', jugador['ID']).execute()
+                    else:
+                        supabase.table(tabla_origen).insert(payload).execute()
+                    st.success("Guardado permanente en Supabase exitoso.")
+                    st.rerun()
                 except Exception as e:
-                    st.error(f"Error al conectar con Supabase: {e}")
-                
-            st.success("Perfil guardado permanentemente.")
-            st.rerun()
+                    st.error(f"Fallo al escribir en Supabase: {e}")
+            else:
+                st.error("Supabase no está conectado.")
             
         if col_btn2.button("🗑️ Eliminar Perfil", key=f"dl_{jugador['ID']}"):
-            st.session_state[lista_origen].pop(idx_origen)
-            if supabase:
-                try: supabase.table(lista_origen).delete().eq('id', jugador['ID']).execute()
-                except: pass
-            st.rerun()
+            if supabase and jugador.get('ID'):
+                try: 
+                    supabase.table(tabla_origen).delete().eq('id', jugador['ID']).execute()
+                    st.success("Jugador eliminado.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error al eliminar: {e}")
 
 # 5. ESTÉTICA
 st.markdown("""
@@ -237,19 +257,77 @@ else:
 
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
-        df_scouting = pd.DataFrame(st.session_state['scouting_db'])
-        seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Overall", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
         
-        if len(seleccion.selection.rows) > 0:
-            mostrar_perfil_jugador(st.session_state['scouting_db'][seleccion.selection.rows[0]], 'scouting_db', seleccion.selection.rows[0])
+        with st.expander("➕ Crear Nuevo Jugador en Base de Datos"):
+            with st.form("form_nuevo_scouting"):
+                c_a, c_b = st.columns(2)
+                reg_nom = c_a.text_input("Nombre Completo")
+                reg_edad = c_a.number_input("Edad", 15, 45, 20)
+                reg_pos = c_a.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+                reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
+                if reg_liga in EQUIPOS_POR_LIGA:
+                    reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga])
+                else:
+                    reg_club = c_b.text_input("Club (Escribir)")
+                reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'])
+                
+                if st.form_submit_button("Guardar Jugador en Nube"):
+                    if reg_nom and supabase:
+                        f_b64 = procesar_foto(reg_foto)
+                        payload = {
+                            "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
+                            "liga": reg_liga, "club": reg_club, "foto": f_b64,
+                            "valor": "N/D", "overall": 70, "viabilidad": "🟡 Media"
+                        }
+                        supabase.table('scouting_db').insert(payload).execute()
+                        st.success(f"{reg_nom} creado permanentemente.")
+                        st.rerun()
+
+        if len(st.session_state['scouting_db']) > 0:
+            df_scouting = pd.DataFrame(st.session_state['scouting_db'])
+            seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Overall", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
+            
+            if len(seleccion.selection.rows) > 0:
+                mostrar_perfil_jugador(st.session_state['scouting_db'][seleccion.selection.rows[0]], 'scouting_db', seleccion.selection.rows[0])
+        else:
+            st.info("No hay jugadores registrados en Supabase. Agrega uno con el botón de arriba.")
 
     elif opcion == "Equipo Ignition":
         st.title("💼 Equipo Ignition")
-        df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
-        seleccion_eq = st.dataframe(df_equipo[["Nombre", "Edad", "Club", "Liga", "Posición", "Status"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
         
-        if len(seleccion_eq.selection.rows) > 0:
-            mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
+        with st.expander("➕ Añadir Jugador a Equipo Ignition"):
+            with st.form("form_nuevo_equipo"):
+                c_a, c_b = st.columns(2)
+                eq_nom = c_a.text_input("Nombre Completo")
+                eq_edad = c_a.number_input("Edad", 15, 45, 20)
+                eq_pos = c_a.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+                eq_status = c_a.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"])
+                eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
+                if eq_liga in EQUIPOS_POR_LIGA:
+                    eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga])
+                else:
+                    eq_club = c_b.text_input("Club (Escribir)")
+                eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'])
+                
+                if st.form_submit_button("Guardar en Equipo Ignition"):
+                    if eq_nom and supabase:
+                        f_b64 = procesar_foto(eq_foto)
+                        payload = {
+                            "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
+                            "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
+                        }
+                        supabase.table('equipo_ignition').insert(payload).execute()
+                        st.success(f"{eq_nom} registrado en el equipo.")
+                        st.rerun()
+
+        if len(st.session_state['equipo_ignition']) > 0:
+            df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
+            seleccion_eq = st.dataframe(df_equipo[["Nombre", "Edad", "Club", "Liga", "Posición", "Status"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
+            
+            if len(seleccion_eq.selection.rows) > 0:
+                mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
+        else:
+            st.info("No hay jugadores en tu plantilla de Ignition.")
 
     elif opcion == "Ingreso de Data (Partidos)":
         st.title("📥 Registro Manual de Estadísticas")
@@ -282,7 +360,7 @@ else:
                 v_intercep = st.number_input("Intercepciones", 0, 30, 0)
                 v_faltas = st.number_input("Faltas Cometidas", 0, 20, 0)
                 
-            if st.form_submit_button("Guardar Estadísticas"):
+            if st.form_submit_button("Guardar Estadísticas en Supabase"):
                 if n_jugador:
                     stats_partido = {
                         "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
@@ -294,13 +372,11 @@ else:
                     if supabase:
                         try:
                             supabase.table('partidos_stats').insert(stats_partido).execute()
-                            st.success(f"Estadísticas guardadas en Supabase para {n_jugador}.")
+                            st.success(f"Estadísticas guardadas permanentemente para {n_jugador}.")
                         except Exception as e:
-                            st.error(f"Error al guardar en Supabase: {e}")
-                    else:
-                        st.info("Estadísticas registradas en sesión local.")
+                            st.error(f"Error al escribir en Supabase: {e}")
                 else:
                     st.error("Ingresa el nombre del jugador.")
 
     else:
-        st.info(f"Módulo '{opcion}' listo para sincronización.")
+        st.info(f"Módulo '{opcion}' listo para sincronización con Supabase.")

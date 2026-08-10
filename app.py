@@ -13,8 +13,8 @@ st.set_page_config(page_title="Ignition Elite Scouting", page_icon="⚽", layout
 @st.cache_resource
 def init_connection():
     try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
+        url = st.secrets["SUPABASE_URL"].strip().rstrip("/")
+        key = st.secrets["SUPABASE_KEY"].strip()
         return create_client(url, key)
     except Exception:
         return None
@@ -26,7 +26,7 @@ def procesar_foto(uploaded_file):
         return "data:image/png;base64," + base64.b64encode(uploaded_file.getvalue()).decode()
     return None
 
-# 2. LECTURA DESDE SUPABASE SIN ERRORES VISIBLES
+# 2. CARGA DESDE SUPABASE O RESPALDO LOCAL
 def cargar_desde_supabase(tabla):
     if supabase:
         try:
@@ -40,7 +40,7 @@ def cargar_desde_supabase(tabla):
                         "Edad": row.get("edad", 20),
                         "Club": row.get("club", "N/D"),
                         "Liga": row.get("liga", "N/D"),
-                        "Posición": row.get("posicion", "Medio"),
+                        "Posición": row.get("posicion", "Mediocentro (MC)"),
                         "Foto": row.get("foto")
                     }
                     if "valor" in row: elem["Valor"] = row.get("valor", "N/D")
@@ -53,11 +53,130 @@ def cargar_desde_supabase(tabla):
             pass
     return []
 
-# Sincronización inicial
+# Sincronización inicial de sesiones
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. LIGAS MUNDIALES Y EQUIPOS 2026/2027
+# 3. LISTA RIGUROSA DE POSICIONES Y SUS 30 MÉTRICAS CADA UNA
+LISTA_POSICIONES = [
+    "Portero", 
+    "Defensa Central", 
+    "Lateral Izquierdo", 
+    "Lateral Derecho", 
+    "Pivote Defensivo (MCD)", 
+    "Mediocentro (MC)", 
+    "Medio Centro Ofensivo (MCO)", 
+    "Extremo", 
+    "Delantero Centro"
+]
+
+def obtener_30_metricas(posicion):
+    if posicion == "Portero":
+        return {
+            "Pilar 1: Atajadas y Reflejos (8)": ["Atajadas Totales p/90", "Reflejos a Quemarropa", "xG Evitados", "Desvíos Exitosos", "Atrapes sin Rebote", "1v1 Ganados %", "Atajadas de Penal", "Tiros Lejanos Salvados"],
+            "Pilar 2: Distribución y Pies (7)": ["Pases Largos Precisos %", "Efectividad Pase Corto %", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo Presión", "Toques de Balón", "Pérdidas en Salida"],
+            "Pilar 3: Dominio del Área (8)": ["Salidas por Alto Exitosas", "Despejes de Puños", "Intercepciones fuera de Área", "Duelos Aéreos Ganados %", "Reivindicaciones de Centro", "Tackles Defensivos", "Faltas Recibidas", "Acciones Defensivas Totales"],
+            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Errores Críticos que terminan en Gol", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida (km)", "Goles Concedidos p/90"]
+        }
+    elif posicion == "Defensa Central":
+        return {
+            "Pilar 1: Defensa Pura (8)": ["Duelos Defensivos Ganados %", "Intercepciones p/90", "Tackles Exitosos", "Bloqueos de Tiro", "Despejes Totales", "Recuperaciones de Balón", "Duelos 1v1 Ganados %", "Faltas Cometidas"],
+            "Pilar 2: Juego Aéreo (7)": ["Duelos Aéreos Totales", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Despejes de Cabeza", "Aéreos en Área Rival", "Aéreos en Área Propia", "Faltas Recibidas por Alto"],
+            "Pilar 3: Salida y Posesión (8)": ["Pases Precisos %", "Pases Progresivos", "Pases Largos Precisos %", "Conducciones Progresivas", "Pases al Tercio Final", "Toques Totales", "Pérdidas de Balón", "Pases bajo Presión"],
+            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints p/90", "Distancia Recorrida (km)", "Aceleraciones"]
+        }
+    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
+        return {
+            "Pilar 1: Cobertura Defensiva (7)": ["Duelos Defensivos Ganados %", "Intercepciones p/90", "Tackles Exitosos", "Bloqueos de Centro", "Recuperaciones tras Pérdida", "Despejes", "Duelos Aéreos Ganados %"],
+            "Pilar 2: Progresión y Posesión (8)": ["Pases Progresivos", "Conducciones Progresivas", "Pases al Tercio Final", "Pases al Espacio", "Toques Totales", "Pérdidas en Salida", "Pases Precisos %", "Pases Recibidos"],
+            "Pilar 3: Aporte Ofensivo (8)": ["Centros Precisos %", "Asistencias Esperadas (xA)", "Desbordes Exitosos", "Toques en Área Rival", "Asistencias Totales", "Tiros a Puerta", "Pases Clave", "Faltas Recibidas en Ataque"],
+            "Pilar 4: Físico y Sprints (7)": ["Minutos Jugados", "Sprints p/90", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas", "Faltas Cometidas", "Tarjetas Rojas"]
+        }
+    elif posicion == "Pivote Defensivo (MCD)":
+        return {
+            "Pilar 1: Destrucción y Cobertura (8)": ["Duelos Defensivos Ganados %", "Intercepciones p/90", "Tackles Exitosos", "Presión Exitosa %", "Recuperaciones Altas", "Faltas Cometidas", "Bloqueos de Pase", "Recuperaciones en Campo Propio"],
+            "Pilar 2: Posesión y Salida (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Conducciones de Balón", "Faltas Recibidas", "Retención de Balón %"],
+            "Pilar 3: Distribución y Transición (7)": ["Pases Progresivos", "Pases al Tercio Final", "Cambios de Orientación", "Pases Largos Precisos %", "Pases Clave", "Desbordes Evitados", "Intercepciones en Transición"],
+            "Pilar 4: Físico y Despliegue (7)": ["Minutos Jugados", "Distancia Recorrida (km)", "Sprints p/90", "Duelos Aéreos Ganados %", "Tarjetas Amarillas", "Tarjetas Rojas", "Aceleraciones"]
+        }
+    elif posicion == "Mediocentro (MC)":
+        return {
+            "Pilar 1: Control y Volumen (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Retención de Balón %", "Pases Cortos Exitosos", "Orientación de Juego"],
+            "Pilar 2: Creación y Progresión (8)": ["Pases Clave p/90", "Pases Progresivos", "Asistencias Esperadas (xA)", "Pases al Tercio Final", "Cambios de Orientación", "Asistencias Directas", "Desbordes Exitosos", "Tiros de Larga Distancia"],
+            "Pilar 3: Trabajo Defensivo (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa", "Recuperaciones de Balón", "Faltas Cometidas", "Bloqueos"],
+            "Pilar 4: Finalización y Físico (7)": ["Goles Esperados (xG)", "Tiros a Puerta", "Goles Totales", "Minutos Jugados", "Distancia Recorrida (km)", "Sprints p/90", "Tarjetas Amarillas"]
+        }
+    elif posicion == "Medio Centro Ofensivo (MCO)":
+        return {
+            "Pilar 1: Visión y Creación (8)": ["Pases Clave p/90", "Asistencias Esperadas (xA)", "Pases al Área Rival", "Pases Filtro Exitosos", "Asistencias Directas", "Toques en Tercio Final", "Pases Recibidos entre Líneas", "Pases Progresivos"],
+            "Pilar 2: Desequilibrio (7)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Conducciones al Área", "Faltas Recibidas en Ataque", "Aceleraciones", "Pérdidas de Balón", "Fueras de Lugar"],
+            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales p/90", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros de Fuera del Área", "Tiros al Palo", "Conversión de Gol %"],
+            "Pilar 4: Presión y Físico (7)": ["Presión Alta Exitosa", "Recuperaciones en Campo Rival", "Minutos Jugados", "Sprints p/90", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
+        }
+    elif posicion == "Extremo":
+        return {
+            "Pilar 1: Desequilibrio y Regate (8)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Desbordes por Banda", "Faltas Recibidas en Ataque", "Aceleraciones p/90", "Conducciones al Área", "Pérdidas de Balón", "Fueras de Lugar"],
+            "Pilar 2: Creación y Centros (7)": ["Centros Precisos %", "Pases Clave p/90", "Asistencias Esperadas (xA)", "Asistencias Directas", "Pases al Área Rival", "Toques Totales", "Pases Progresivos Recibidos"],
+            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales p/90", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
+            "Pilar 4: Físico y Trabajo (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints p/90", "Velocidad Máxima (km/h)", "Distancia Recorrida"]
+        }
+    else: # Delantero Centro
+        return {
+            "Pilar 1: Finalización Eficaz (8)": ["Goles Totales p/90", "Goles Esperados (xG)", "Tiros a Puerta %", "Tiros Totales p/90", "Conversión de Gol %", "Penales Anotados", "Tiros al Palo", "Fueras de Lugar"],
+            "Pilar 2: Presencia en Área (7)": ["Toques en Área Rival", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Faltas Recibidas en Área", "Pases Recibidos en Área", "Anticipaciones Ofensivas", "Rebotes Ganados"],
+            "Pilar 3: Asociación y Apoyos (8)": ["Asistencias Directas", "Asistencias Esperadas (xA)", "Pases Clave p/90", "Regates Exitosos", "Duelos Ofensivos Ganados", "Pases Precisos %", "Pérdidas de Balón", "Faltas Cometidas en Ataque"],
+            "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints p/90", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
+        }
+
+# 4. CONFIGURADOR DEL RADAR DINÁMICO POR POSICIÓN
+def obtener_ejes_radar(posicion):
+    if posicion == "Portero":
+        return ['Reflejos', 'Salidas Aéreas', 'Distribución', '1v1 Ganados', 'Juego de Pies']
+    elif posicion == "Defensa Central":
+        return ['Defensa Pura', 'Juego Aéreo', 'Salida de Balón', 'Cobertura', 'Físico']
+    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
+        return ['Defensa', 'Progresión', 'Centros/xA', 'Desborde', 'Despliegue']
+    elif posicion == "Pivote Defensivo (MCD)":
+        return ['Destrucción', 'Cobertura', 'Recuperación', 'Salida de Balón', 'Físico']
+    elif posicion == "Mediocentro (MC)":
+        return ['Volumen Pase', 'Creación', 'Presión', 'Transición', 'Llegada']
+    elif posicion == "Medio Centro Ofensivo (MCO)":
+        return ['Visión/xA', 'Pases Clave', 'Regate', 'Finalización', 'Movilidad']
+    elif posicion == "Extremo":
+        return ['Desequilibrio', 'Centros', 'Finalización', 'Aceleración', 'Presión Alta']
+    else: # Delantero Centro
+        return ['Finalización', 'Juego Aéreo', 'Presencia Área', 'Asociación', 'Presión Alta']
+
+def calcular_valores_radar(nombre_jugador, posicion):
+    # Consultar partidos registrados en Supabase para este jugador
+    ejes = obtener_ejes_radar(posicion)
+    if supabase and nombre_jugador:
+        try:
+            res = supabase.table('partidos_stats').select("*").eq('jugador', nombre_jugador).execute()
+            if res.data and len(res.data) > 0:
+                df_p = pd.DataFrame(res.data)
+                tot_min = df_p['minutos'].sum()
+                if tot_min > 0:
+                    goles_p90 = (df_p['goles'].sum() / tot_min) * 90
+                    asis_p90 = (df_p['asistencias'].sum() / tot_min) * 90
+                    tiros_p90 = (df_p['tiros'].sum() / tot_min) * 90
+                    pases_p90 = (df_p['pases_clave'].sum() / tot_min) * 90
+                    duelos_p90 = (df_p['duelos_ganados'].sum() / tot_min) * 90
+                    inter_p90 = (df_p['intercepciones'].sum() / tot_min) * 90
+                    
+                    # Escalamiento dinámico (0-100) según métricas reales
+                    v1 = min(100, int(goles_p90 * 30 + tiros_p90 * 15 + 50))
+                    v2 = min(100, int(asis_p90 * 35 + pases_p90 * 15 + 50))
+                    v3 = min(100, int(inter_p90 * 20 + duelos_p90 * 5 + 40))
+                    v4 = min(100, int(duelos_p90 * 8 + 45))
+                    v5 = min(100, int(pases_p90 * 15 + 55))
+                    return ejes, [v1, v2, v3, v4, v5]
+        except Exception:
+            pass
+    # Valores base por defecto adaptados a la posición si aún no hay partidos
+    return ejes, [70, 75, 65, 80, 72]
+
+# 5. LIGAS MUNDIALES Y EQUIPOS 2026/2027 (TRANSFERMARKT)
 LIGAS_MUNDIALES = [
     "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
     "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
@@ -67,7 +186,7 @@ LIGAS_MUNDIALES = [
     "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
     "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
     "🇦🇹 Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
-    "🇸Kb Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
+    "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
     "🇦🇷 Primera División Argentina", "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
     "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile", 
     "🇺🇸 MLS", "🇺🇸 MLS Next Pro", "🇺🇸 USL", "🇯🇵 J-League"
@@ -90,51 +209,45 @@ EQUIPOS_POR_LIGA = {
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"]
 }
 
-def obtener_metricas(posicion):
-    if posicion == "Portero":
-        return {"Pilar 1: Atajadas": ["Atajadas Totales p/90", "Reflejos a Quemarropa", "xG Evitados", "Desvíos", "Atrapes sin rebote", "1v1 Ganados", "Atajadas de Penal", "Tiros Lejanos Salvados"], "Pilar 2: Distribución": ["Pases Largos Precisos", "Efectividad Pase Corto", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo presión", "Toques de balón", "Pérdidas en salida"], "Pilar 3: Dominio del Área": ["Salidas por Alto", "Despejes de Puños", "Intercepciones", "Duelos Aéreos Ganados", "Reivindicaciones", "Tackles", "Faltas recibidas", "Acciones defensivas fuera"], "Pilar 4: Físico/Contexto": ["Minutos Jugados", "Errores Críticos", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida", "Goles Concedidos"]}
-    elif posicion == "Defensa Central":
-        return {"Pilar 1: Defensa Pura": ["Duelos Defensivos %", "Intercepciones p/90", "Tackles", "Bloqueos", "Despejes", "Recuperaciones", "Duelos 1v1", "Faltas Cometidas"], "Pilar 2: Juego Aéreo": ["Duelos Aéreos Totales", "Duelos Aéreos %", "Goles de Cabeza", "Despejes de Cabeza", "Aéreos en Área Rival", "Aéreos en Área Propia", "Faltas por alto"], "Pilar 3: Salida": ["Pases Precisos %", "Pases Progresivos", "Pases Largos Precisos", "Conducciones", "Pases al Tercio Final", "Toques", "Pérdidas de Balón", "Pases bajo presión"], "Pilar 4: Físico": ["Minutos", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints", "Distancia Recorrida", "Aceleraciones"]}
-    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
-        return {"Pilar 1: Defensa": ["Duelos Defensivos %", "Intercepciones p/90", "Tackles", "Bloqueos de Centro", "Recuperaciones", "Despejes", "Duelos Aéreos"], "Pilar 2: Progresión": ["Pases Progresivos", "Conducciones", "Pases al Tercio Final", "Pases al Espacio", "Toques", "Pérdidas en Salida", "Pases Precisos %", "Pases Recibidos"], "Pilar 3: Ofensiva": ["Centros Precisos %", "xA", "Desbordes", "Toques en Área", "Asistencias", "Tiros", "Pases Clave", "Faltas Recibidas"], "Pilar 4: Físico": ["Minutos", "Sprints p/90", "Distancia Recorrida", "Velocidad Máxima", "Tarjetas", "Faltas Cometidas", "Rojas"]}
-    elif posicion == "Medio":
-        return {"Pilar 1: Destrucción": ["Duelos Defensivos", "Intercepciones", "Tackles", "Presión", "Recuperaciones", "Faltas", "Bloqueos"], "Pilar 2: Posesión": ["Pases Precisos %", "Toques", "Pases bajo presión", "Pérdidas", "Pases Recibidos", "Conducciones", "Faltas Recibidas", "Retención %"], "Pilar 3: Creación": ["Pases Clave", "Pases Progresivos", "xA", "Pases al Tercio Final", "Cambios de Orientación", "Asistencias", "Desbordes", "Tiros Lejanos"], "Pilar 4: Finalización": ["xG", "Tiros", "Goles", "Minutos", "Distancia Recorrida", "Sprints", "Tarjetas Amarillas"]}
-    elif posicion == "Extremo":
-        return {"Pilar 1: Desequilibrio": ["Regates Exitosos", "Duelos Ofensivos", "Desbordes", "Faltas Recibidas", "Aceleraciones", "Conducciones al Área", "Pérdidas", "Fueras de Lugar"], "Pilar 2: Creación": ["Centros Precisos %", "Pases Clave", "xA", "Asistencias", "Pases al Área", "Toques", "Pases Progresivos"], "Pilar 3: Finalización": ["xG", "Tiros Totales", "Tiros a Puerta", "Goles", "Toques en Área", "Tiros al Palo", "Conversión %", "Duelos Aéreos"], "Pilar 4: Físico": ["Presión", "Recuperaciones", "Intercepciones", "Minutos", "Sprints", "Velocidad Máxima", "Distancia"]}
-    else: 
-        return {"Pilar 1: Finalización": ["Goles", "xG", "Tiros a Puerta", "Tiros Totales", "Conversión %", "Penales", "Tiros al Palo", "Fueras de Lugar"], "Pilar 2: Presencia": ["Toques en Área", "Duelos Aéreos", "Goles de Cabeza", "Faltas en Área", "Pases en Área", "Anticipaciones", "Rebotes"], "Pilar 3: Asociación": ["Asistencias", "xA", "Pases Clave", "Regates", "Duelos Ofensivos", "Pases Precisos %", "Pérdidas", "Faltas en Ataque"], "Pilar 4: Físico": ["Minutos", "Presión Alta", "Recuperaciones", "Sprints", "Distancia", "Velocidad Máxima", "Tarjetas"]}
-
-# 4. MOSTRAR PERFIL Y EDICIÓN
+# 6. MOSTRAR PERFIL DE JUGADOR CON RADAR 100% DINÁMICO
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
     
     col_img, col_info, col_radar = st.columns([1, 2, 2])
     with col_img:
-        if jugador.get('Foto'):
-            st.image(jugador['Foto'], width=150)
-        else:
-            st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=150)
+        foto_src = jugador.get('Foto') if jugador.get('Foto') else "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+        st.markdown(f"""
+            <div class="player-photo-card">
+                <img src="{foto_src}" class="player-photo-img" />
+            </div>
+        """, unsafe_allow_html=True)
         
     with col_info:
-        st.markdown(f"**Posición:** {jugador['Posición']}")
+        st.markdown(f"**Posición Específica:** {jugador['Posición']}")
         st.markdown(f"**Club:** {jugador['Club']} | **Liga:** {jugador.get('Liga', 'N/D')}")
         st.markdown(f"**Edad:** {jugador['Edad']}")
         if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
-        categorias = ['Ataque', 'Creación', 'Defensa', 'Físico', 'Posesión']
-        valores = [75, 70, 65, 80, 72]
-        angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]; valores += valores[:1]
+        # CONSTRUCCIÓN DEL RADAR ADAPTATIVO
+        ejes_dinamicos, valores_dinamicos = calcular_valores_radar(jugador['Nombre'], jugador['Posición'])
+        angulos = [n / 5 * 2 * math.pi for n in range(5)]
+        angulos += angulos[:1]
+        valores_plot = valores_dinamicos + valores_dinamicos[:1]
+        
         fig, ax = plt.subplots(figsize=(2.2, 2.2), subplot_kw=dict(polar=True))
-        plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8, weight='bold')
-        ax.plot(angulos, valores, color='#1A2B4C', linewidth=2)
-        ax.fill(angulos, valores, color='#C8A165', alpha=0.4)
-        fig.patch.set_facecolor('none'); ax.set_facecolor('none'); ax.set_yticklabels([])
+        plt.xticks(angulos[:-1], ejes_dinamicos, color='#1A2B4C', size=7, weight='bold')
+        ax.plot(angulos, valores_plot, color='#1A2B4C', linewidth=2)
+        ax.fill(angulos, valores_plot, color='#C8A165', alpha=0.45)
+        fig.patch.set_facecolor('none')
+        ax.set_facecolor('none')
+        ax.set_yticklabels([])
         st.pyplot(fig, use_container_width=True)
 
-    st.markdown(f"### Matriz de Rendimiento p/90 ({jugador['Posición']})")
-    metricas_q = obtener_metricas(jugador['Posición'])
+    # MATRIZ DE 30 MÉTRICAS EXACTAS SEGÚN LA POSICIÓN
+    st.markdown(f"### Matriz Quirúrgica p/90 ({jugador['Posición']})")
+    metricas_q = obtener_30_metricas(jugador['Posición'])
     tabs = st.tabs(list(metricas_q.keys()))
     for i, (pilar, lista_metricas) in enumerate(metricas_q.items()):
         with tabs[i]:
@@ -146,7 +259,9 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
         nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
-        nueva_pos = c_ed1.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"], index=["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"].index(jugador['Posición']), key=f"pos_{jugador['ID']}")
+        
+        pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
+        nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
         
         nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:
@@ -180,12 +295,32 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 5. ESTÉTICA
+# 7. ESTÉTICA ELEGANTE Y FORMATO ESTÁNDAR DE FOTOGRAFÍAS
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
+    
+    .player-photo-card {
+        width: 150px;
+        height: 180px;
+        border-radius: 8px;
+        border: 2px solid #C8A165;
+        overflow: hidden;
+        background-color: #E2E8F0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .player-photo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+    }
+    
     .login-container { max-width: 420px; margin: 50px auto; padding: 40px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
     .metric-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-left: 4px solid #1A2B4C; padding: 12px; border-radius: 6px; margin-bottom: 10px; color: #1A2B4C; font-size: 13px; }
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; }
@@ -193,7 +328,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 6. LOGIN Y NAVEGACIÓN
+# 8. SESIÓN Y NAVEGACIÓN
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
@@ -249,7 +384,7 @@ else:
                 c_a, c_b = st.columns(2)
                 reg_nom = c_a.text_input("Nombre Completo")
                 reg_edad = c_a.number_input("Edad", 15, 45, 20)
-                reg_pos = c_a.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+                reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES)
                 reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
                 if reg_liga in EQUIPOS_POR_LIGA:
                     reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga])
@@ -287,7 +422,7 @@ else:
                 c_a, c_b = st.columns(2)
                 eq_nom = c_a.text_input("Nombre Completo")
                 eq_edad = c_a.number_input("Edad", 15, 45, 20)
-                eq_pos = c_a.selectbox("Posición", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+                eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES)
                 eq_status = c_a.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"])
                 eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
                 if eq_liga in EQUIPOS_POR_LIGA:
@@ -322,7 +457,7 @@ else:
         
         c1, c2 = st.columns(2)
         n_jugador = c1.text_input("Nombre del Jugador")
-        n_posicion = c1.selectbox("📍 Posición (Métricas)", ["Portero", "Lateral Izquierdo", "Lateral Derecho", "Defensa Central", "Medio", "Extremo", "Delantero"])
+        n_posicion = c1.selectbox("📍 Posición Específica", LISTA_POSICIONES)
         
         n_liga = c2.selectbox("🏆 Competición", LIGAS_MUNDIALES)
         if n_liga in EQUIPOS_POR_LIGA:

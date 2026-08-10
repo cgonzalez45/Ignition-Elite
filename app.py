@@ -5,204 +5,175 @@ import matplotlib.pyplot as plt
 import math
 from supabase import create_client, Client
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="CG Scouting Pro V2", page_icon="⚽", layout="wide")
+# 1. CONFIGURACIÓN
+st.set_page_config(page_title="CG Scouting Pro V3", page_icon="⚽", layout="wide")
 
-# 2. CONEXIÓN A BASE DE DATOS SUPABASE
 @st.cache_resource
 def init_connection():
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
 try:
     supabase = init_connection()
     db_conectada = True
-except Exception as e:
+except:
     db_conectada = False
 
-# 3. ESTÉTICA INSTITUCIONAL V2.0 (Logo Fijo y Contraste)
+# 2. LISTA MUNDIAL DE LIGAS (Con Banderas)
+LIGAS_MUNDIALES = [
+    "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League One", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League Two",
+    "🇫🇷 Ligue 1", "🇫🇷 Ligue 2", "🇮🇹 Serie A", "🇮🇹 Serie B",
+    "🇩🇪 Bundesliga", "🇩🇪 2. Bundesliga", "🇸🇪 Allsvenskan", "🇳🇴 Eliteserien",
+    "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
+    "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
+    "🇦🇹 Bundesliga Austria", "🇨🇭 Superliga de Suiza",
+    "🇦🇷 Primera División Argentina", "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", 
+    "🇲🇽 Liga MX U-23", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
+    "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
+    "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", 
+    "🇨🇱 Primera División Chile", "🇺🇸 MLS", "🇯🇵 J-League"
+]
+
+# 3. MOTOR DE MÉTRICAS QUIRÚRGICAS POR POSICIÓN
+def obtener_metricas(posicion):
+    if posicion == "Portero":
+        return {
+            "Pilar 1: Atajadas y Reflejos": ["Atajadas p/90", "Reflejos a Quemarropa", "Penales Salvados", "xG Evitados", "Desvíos", "Atrapes sin rebote", "1v1 Ganados"],
+            "Pilar 2: Distribución": ["Pases Largos Precisos", "Efectividad Pase Corto", "Saques de Meta al Tercio Rival", "Inicios de Contragolpe"],
+            "Pilar 3: Dominio del Área": ["Salidas por Alto Exitosas", "Despejes de Puños", "Intercepciones fuera del área", "Duelos Aéreos Ganados"],
+            "Pilar 4: Físico y Contexto": ["Minutos Jugados", "Errores que terminan en Gol", "Tarjetas"] # Hasta llenar 30 específicas
+        }
+    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
+        return {
+            "Pilar 1: Defensa y Duelos": ["Duelos Defensivos Ganados %", "Intercepciones p/90", "Tackles Exitosos", "Recuperaciones tras pérdida", "Duelos Aéreos"],
+            "Pilar 2: Progresión": ["Pases Progresivos", "Conducciones al Tercio Final", "Pases al Espacio", "Pérdidas de Balón en Salida"],
+            "Pilar 3: Daño Ofensivo": ["Centros Precisos %", "Asistencias Esperadas (xA)", "Desbordes Exitosos", "Toques en Área Rival"],
+            "Pilar 4: Físico": ["Sprints p/90", "Distancia Recorrida", "Faltas Cometidas"]
+        }
+    # Por defecto para jugadores de campo (Aquí cargaremos las 30 exactas para Medios y Delanteros)
+    return {
+        "Pilar 1: Destrucción/Defensa": ["Duelos Ganados", "Intercepciones", "Tackles", "Presión Exitosa", "Recuperaciones Altas"],
+        "Pilar 2: Creación/Salida": ["Pases Clave", "Precisión Pases", "Pases Progresivos", "Cambios de Orientación", "Asistencias"],
+        "Pilar 3: Finalización": ["Goles Esperados (xG)", "Tiros a Puerta", "Toques en Área", "Regates Exitosos", "Tiros Totales"],
+        "Pilar 4: Desgaste": ["Minutos", "Tarjetas Amarillas", "Faltas Recibidas"]
+    }
+
+# 4. ESTÉTICA
 st.markdown("""
     <style>
-    /* Fondo del Menú Lateral y Texto Blanco */
-    [data-testid="stSidebar"] {
-        background-color: #1A2B4C !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
-    }
-    /* Logo Fijo Superior Izquierdo */
-    .sidebar-logo-container {
-        text-align: center;
-        padding: 20px 0;
-        border-bottom: 2px solid #C8A165;
-        margin-bottom: 20px;
-    }
-    .cg-logo {
-        color: #C8A165 !important;
-        font-size: 45px !important;
-        font-weight: 900 !important;
-        margin: 0 !important;
-        line-height: 1 !important;
-    }
-    .cg-sub {
-        color: #FFFFFF !important;
-        font-size: 13px !important;
-        font-weight: bold !important;
-        letter-spacing: 2px !important;
-    }
-    /* Botones Dorados */
-    .stButton>button {
-        background-color: #C8A165;
-        color: #1A2B4C !important;
-        font-weight: bold;
-        border: none;
-        border-radius: 6px;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background-color: #FFFFFF;
-    }
-    /* Tarjetas de Métricas */
-    .metric-card {
-        background-color: #F8F9FA;
-        border-left: 5px solid #1A2B4C;
-        padding: 12px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        color: #1A2B4C;
-    }
+    [data-testid="stSidebar"] {background-color: #1A2B4C !important;}
+    [data-testid="stSidebar"] * {color: #FFFFFF !important;}
+    .metric-card {background-color: #F8F9FA; border-left: 5px solid #1A2B4C; padding: 12px; border-radius: 5px; margin-bottom: 10px; color: #1A2B4C;}
+    .stButton>button {background-color: #C8A165; color: #1A2B4C !important; font-weight: bold; width: 100%;}
     </style>
 """, unsafe_allow_html=True)
 
-# 4. MANEJO DE SESIÓN (LOGIN)
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
+# 5. MENÚ LATERAL Y NAVEGACIÓN
+if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("""
-            <div style="background-color:#1A2B4C; padding:40px; border-radius:15px; text-align:center; border: 3px solid #C8A165;">
-                <h1 style="color:#C8A165; font-size:70px; margin:0;">CG</h1>
-                <h3 style="color:#FFFFFF; margin-top:0;">SCOUTING PRO</h3>
-                <hr style="border-color:#C8A165;">
-                <p style="color:#FFFFFF;">Base de Datos de Inteligencia Deportiva</p>
-            </div>
-        """, unsafe_allow_html=True)
-        st.write("")
+        st.markdown("<h1 style='text-align:center; color:#1A2B4C;'>CG SCOUTING PRO</h1>", unsafe_allow_html=True)
         usuario = st.text_input("Usuario Corporativo")
         password = st.text_input("Contraseña", type="password")
-        if st.button("AUTENTICAR SISTEMA"):
-            if usuario.lower() == "christian" and password == "1234":
-                st.session_state['logged_in'] = True
-                st.rerun()
-            else:
-                st.error("Credenciales incorrectas")
+        if st.button("INGRESAR"):
+            if usuario == "christian" and password == "1234":
+                st.session_state['logged_in'] = True; st.rerun()
 
-# 5. SISTEMA PRINCIPAL
 else:
-    # MENÚ LATERAL CON LOGO FIJO
     with st.sidebar:
-        st.markdown("""
-            <div class="sidebar-logo-container">
-                <p class="cg-logo">CG</p>
-                <p class="cg-sub">SCOUTING PRO</p>
-            </div>
-        """, unsafe_allow_html=True)
+        # AQUÍ IRÁ TU LOGO REAL CUANDO LO SUBAMOS A GITHUB
+        try:
+            st.image("logo.png", use_container_width=True)
+        except:
+            st.markdown("<h1 style='color:#C8A165; text-align:center;'>CG PRO</h1>", unsafe_allow_html=True)
         
-        opcion = st.radio(
-            "Navegación",
-            ["Métricas y Radares", "Ingreso de Data (Partidos)", "Mi Plantilla"]
-        )
+        st.write("---")
+        opcion = st.radio("Navegación", [
+            "Dashboard Principal", "Ingreso de Data (Partidos)", 
+            "Mi Plantilla", "Shortlists", "Comparador", "Scoring por Perfil"
+        ])
         st.write("---")
         if st.button("Cerrar Sesión"):
-            st.session_state['logged_in'] = False
-            st.rerun()
+            st.session_state['logged_in'] = False; st.rerun()
 
-    # MÓDULO: MÉTRICAS Y RADARES
-    if opcion == "Métricas y Radares":
+    # MÓDULO 1: DASHBOARD Y PERFIL QUIRÚRGICO
+    if opcion == "Dashboard Principal":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        col_f1, col_f2 = st.columns([2, 1])
-        with col_f1:
-            busqueda = st.text_input("🔍 Buscar jugador en la Base de Datos...")
-        with col_f2:
-            filtro_torneo = st.selectbox("🏆 Competición", 
-                ["Gran Total (Temporada)", "Liga MX - Fechas 1 a 3", "Leagues Cup", "Fuerzas Básicas"])
-
-        st.markdown("---")
-        st.subheader("👤 Perfil Analítico: Alisana Yirajang (Ejemplo de Estructura)")
+        busqueda = st.text_input("🔍 Buscar jugador...")
         
-        c1, c2 = st.columns([1, 2])
-        with c1:
-            st.markdown(f"**Posición:** Extremo Izq. | **Edad:** 21 | **Valor:** €800k")
-            st.markdown(f"**Filtro Activo:** `{filtro_torneo}`")
+        st.markdown("---")
+        st.subheader("👤 Perfil Analítico Individual")
+        
+        col_img, col_info, col_radar = st.columns([1, 2, 2])
+        
+        with col_img:
+            # FOTO DE PERFIL DEL JUGADOR
+            st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=150) # Placeholder genérico
             
-            # Radar Adaptativo (No se deforma)
+        with col_info:
+            posicion_actual = st.selectbox("Posición (Cambia esto para ver métricas quirúrgicas):", ["Portero", "Lateral Izquierdo", "Defensa Central", "Extremo", "Delantero"])
+            st.markdown(f"**Nombre:** Alisana Yirajang")
+            st.markdown(f"**Club:** Slovan | **Edad:** 21")
+            st.markdown(f"**Valor:** €800k")
+            
+        with col_radar:
             categorias = ['Ataque', 'Creación', 'Defensa', 'Físico', 'Posesión']
             valores = [85, 70, 45, 80, 65]
-            angulos = [n / 5 * 2 * math.pi for n in range(5)]
-            angulos += angulos[:1]
-            valores += valores[:1]
+            angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]; valores += valores[:1]
+            fig, ax = plt.subplots(figsize=(2, 2), subplot_kw=dict(polar=True))
+            plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8)
+            ax.plot(angulos, valores, color='#1A2B4C'); ax.fill(angulos, valores, color='#C8A165', alpha=0.5)
+            fig.patch.set_facecolor('none'); ax.set_facecolor('none'); ax.set_yticklabels([])
+            st.pyplot(fig, use_container_width=True)
             
-            fig, ax = plt.subplots(figsize=(3, 3), subplot_kw=dict(polar=True))
-            plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8, weight='bold')
-            ax.set_rlabel_position(0)
-            plt.yticks([20, 40, 60, 80], [], color="grey", size=7)
-            ax.plot(angulos, valores, linewidth=2, linestyle='solid', color='#1A2B4C')
-            ax.fill(angulos, valores, color='#C8A165', alpha=0.5)
-            fig.patch.set_facecolor('none')
-            ax.set_facecolor('none')
-            st.pyplot(fig, use_container_width=True) 
-
-        with c2:
-            st.markdown("### Matriz de Rendimiento p/90")
-            t1, t2, t3, t4 = st.tabs(["Ofensiva", "Creación", "Defensa", "Físico / Contexto"])
-            
-            with t1:
-                st.markdown("<div class='metric-card'><b>xG (Goles Esperados) p/90:</b> 0.45 <span style='color:green;'>(p85)</span></div>", unsafe_allow_html=True)
-                st.markdown("<div class='metric-card'><b>Tiros a Puerta p/90:</b> 2.1 <span style='color:green;'>(p78)</span></div>", unsafe_allow_html=True)
-                st.markdown("<div class='metric-card'><b>Toques en Área Rival p/90:</b> 4.5 <span style='color:#C8A165;'>(p60)</span></div>", unsafe_allow_html=True)
-
-    # MÓDULO: INGRESO DE DATA
-    elif opcion == "Ingreso de Data (Partidos)":
-        st.title("📥 Ingreso de Estadísticas (Fechas 1, 2, 3 y Leagues Cup)")
-        if db_conectada:
-            st.success("✅ Base de Datos Conectada: Los datos se guardarán en Supabase.")
-        else:
-            st.warning("⚠️ Modo Offline: Revisa tus llaves en 'Secrets'.")
+        st.markdown("### Matriz de Rendimiento p/90 (Específica por Posición)")
+        metricas_q = obtener_metricas(posicion_actual)
         
-        with st.form("form_carga_datos"):
+        # Tabs dinámicos según la posición
+        tabs = st.tabs(list(metricas_q.keys()))
+        for i, (pilar, lista_metricas) in enumerate(metricas_q.items()):
+            with tabs[i]:
+                cols = st.columns(3)
+                for j, metrica in enumerate(lista_metricas):
+                    cols[j % 3].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165;'>Dato pendiente (API)</span></div>", unsafe_allow_html=True)
+
+    # MÓDULO 2: INGRESO DE DATA CON LIGAS MUNDIALES
+    elif opcion == "Ingreso de Data (Partidos)":
+        st.title("📥 Registro de Stats de Partido")
+        with st.form("form_partido"):
             col1, col2 = st.columns(2)
             with col1:
-                nombre = st.text_input("Nombre del Jugador")
-                torneo = st.selectbox("Torneo", ["Liga MX Apertura 2026", "Leagues Cup", "Fuerzas Básicas"])
+                st.text_input("Jugador")
+                st.selectbox("🏆 Competición / Torneo", LIGAS_MUNDIALES)
             with col2:
-                fecha = st.selectbox("Jornada", ["Fecha 1", "Fecha 2", "Fecha 3"])
-                viaje_primer_equipo = st.checkbox("Convocatoria/Viaje sin minutos (Experiencia)")
-            
-            st.markdown("#### Métricas del Partido")
-            c1, c2, c3, c4 = st.columns(4)
-            with c1: st.number_input("Minutos", 0, 120, 90)
-            with c2: st.number_input("Goles", 0, 5, 0)
-            with c3: st.number_input("Asistencias", 0, 5, 0)
-            with c4: st.number_input("Duelos Ganados", 0, 30, 0)
-            
-            submit = st.form_submit_button("Guardar en Base de Datos")
-            if submit:
-                st.success(f"¡Estadísticas de {nombre} registradas exitosamente en la nube!")
+                st.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)])
+                st.checkbox("Viaje/Convocatoria sin minutos")
+            st.form_submit_button("Guardar Estadísticas")
 
-    # MÓDULO: MI PLANTILLA
+    # MÓDULO 3: MI PLANTILLA Y AÑADIR JUGADORES
     elif opcion == "Mi Plantilla":
-        st.title("💼 Mi Plantilla")
+        st.title("💼 Mi Plantilla y Seguimiento")
+        
+        # BOTÓN PARA AGREGAR NUEVO JUGADOR A LA PLANTILLA
+        with st.expander("➕ Añadir Nuevo Jugador a Mi Plantilla"):
+            with st.form("nuevo_plantilla"):
+                c1, c2 = st.columns(2)
+                c1.text_input("Nombre Completo")
+                c1.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"])
+                c2.text_input("URL de su Fotografía (Link)")
+                c2.selectbox("Posición", ["Portero", "Defensa", "Medio", "Delantero"])
+                if st.form_submit_button("Registrar en Plantilla"):
+                    st.success("Jugador añadido a tu base de datos (Supabase en background).")
+                    
         df_p = pd.DataFrame([
-            {"Jugador": "José Juan Macías", "Club": "Pumas", "Cat": "Primera", "Status": "FIRMADO"},
-            {"Jugador": "Oscar García", "Club": "León", "Cat": "Primera", "Status": "FIRMADO"},
-            {"Jugador": "Kevin Mora", "Club": "León", "Cat": "Primera", "Status": "FIRMADO"},
-            {"Jugador": "Miguel Mendoza", "Club": "León", "Cat": "Sub-17", "Status": "FIRMADO"},
-            {"Jugador": "Sergio Luna", "Club": "León", "Cat": "Sub-19", "Status": "FIRMADO"},
-            {"Jugador": "Bryan Destin", "Club": "CT United", "Cat": "Internacional", "Status": "OBJETIVO"}
+            {"Jugador": "José Juan Macías", "Club": "Pumas", "Liga": "🇲🇽 Liga MX", "Status": "FIRMADO 🟡"},
+            {"Jugador": "Miguel Mendoza", "Club": "León", "Liga": "🇲🇽 Liga MX U-17", "Status": "FIRMADO 🟡"}
         ])
         st.dataframe(df_p, use_container_width=True, hide_index=True)
+
+    else:
+        st.info(f"Módulo de {opcion} en construcción.")

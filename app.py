@@ -24,7 +24,7 @@ def procesar_foto(uploaded_file):
         return "data:image/png;base64," + base64.b64encode(uploaded_file.getvalue()).decode()
     return None
 
-# 2. BASE DE DATOS LOCAL INICIAL
+# 2. BASE DE DATOS LOCAL INICIAL (MEMORIA DE TRABAJO)
 if 'scouting_db' not in st.session_state:
     st.session_state['scouting_db'] = [
         {"ID": 1, "Nombre": "Alisana Yirajang", "Edad": 21, "Club": "Slovan Bratislava", "Liga": "🇸🇰 Liga Eslovaquia", "Valor": "€800k", "Overall": 85, "Viabilidad": "🔴 Baja", "Posición": "Extremo", "Foto": None},
@@ -41,7 +41,7 @@ if 'equipo_ignition' not in st.session_state:
         {"ID": 8, "Nombre": "Bryan Destin", "Edad": 18, "Club": "CT United", "Liga": "🇺🇸 MLS Next Pro", "Status": "OBJETIVO 🔵", "Posición": "Delantero", "Foto": None}
     ]
 
-# 3. LIGAS MUNDIALES COMPLETAS Y EQUIPOS OFICIALES 2026/2027
+# 3. LIGAS MUNDIALES Y EQUIPOS VERIFICADOS (SINTAXIS CORREGIDA)
 LIGAS_MUNDIALES = [
     "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
     "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
@@ -73,7 +73,7 @@ EQUIPOS_POR_LIGA = {
     "🇦🇷 Primera División Argentina": ["Boca Juniors", "River Plate", "Racing Club", "Independiente", "San Lorenzo", "Vélez Sarsfield", "Estudiantes de La Plata", "Gimnasia La Plata", "Talleres de Córdoba", "Belgrano", "Rosario Central", "Newell's Old Boys", "Argentinos Juniors", "CA Huracán", "CA Lanús", "Godoy Cruz"]
 }
 
-# 4. DICCIONARIO DE 30 MÉTRICAS QUIRÚRGICAS
+# 4. LAS 30 MÉTRICAS QUIRÚRGICAS POR POSICIÓN
 def obtener_metricas(posicion):
     if posicion == "Portero":
         return {"Pilar 1: Atajadas": ["Atajadas Totales p/90", "Reflejos a Quemarropa", "xG Evitados", "Desvíos", "Atrapes sin rebote", "1v1 Ganados", "Atajadas de Penal", "Tiros Lejanos Salvados"], "Pilar 2: Distribución": ["Pases Largos Precisos", "Efectividad Pase Corto", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo presión", "Toques de balón", "Pérdidas en salida"], "Pilar 3: Dominio del Área": ["Salidas por Alto", "Despejes de Puños", "Intercepciones", "Duelos Aéreos Ganados", "Reivindicaciones", "Tackles", "Faltas recibidas", "Acciones defensivas fuera"], "Pilar 4: Físico/Contexto": ["Minutos Jugados", "Errores Críticos", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida", "Goles Concedidos"]}
@@ -88,7 +88,7 @@ def obtener_metricas(posicion):
     else: 
         return {"Pilar 1: Finalización": ["Goles", "xG", "Tiros a Puerta", "Tiros Totales", "Conversión %", "Penales", "Tiros al Palo", "Fueras de Lugar"], "Pilar 2: Presencia": ["Toques en Área", "Duelos Aéreos", "Goles de Cabeza", "Faltas en Área", "Pases en Área", "Anticipaciones", "Rebotes"], "Pilar 3: Asociación": ["Asistencias", "xA", "Pases Clave", "Regates", "Duelos Ofensivos", "Pases Precisos %", "Pérdidas", "Faltas en Ataque"], "Pilar 4: Físico": ["Minutos", "Presión Alta", "Recuperaciones", "Sprints", "Distancia", "Velocidad Máxima", "Tarjetas"]}
 
-# 5. MOSTRAR PERFIL Y EDICIÓN
+# 5. MOSTRAR PERFIL Y EDICIÓN DE JUGADOR
 def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
@@ -98,7 +98,7 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         if jugador.get('Foto'):
             st.image(jugador['Foto'], width=150)
         else:
-            st.image("[https://cdn-icons-png.flaticon.com/512/3135/3135715.png](https://cdn-icons-png.flaticon.com/512/3135/3135715.png)", width=150)
+            st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=150)
         
     with col_info:
         st.markdown(f"**Posición:** {jugador['Posición']}")
@@ -110,10 +110,13 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         categorias = ['Ataque', 'Creación', 'Defensa', 'Físico', 'Posesión']
         valores = [85, 70, 45, 80, 65]
         angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]; valores += valores[:1]
-        fig, ax = plt.subplots(figsize=(2, 2), subplot_kw=dict(polar=True))
-        plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8)
-        ax.plot(angulos, valores, color='#1A2B4C'); ax.fill(angulos, valores, color='#C8A165', alpha=0.5)
-        fig.patch.set_facecolor('none'); ax.set_facecolor('none'); ax.set_yticklabels([])
+        fig, ax = plt.subplots(figsize=(2.2, 2.2), subplot_kw=dict(polar=True))
+        plt.xticks(angulos[:-1], categorias, color='#1A2B4C', size=8, weight='bold')
+        ax.plot(angulos, valores, color='#1A2B4C', linewidth=2)
+        ax.fill(angulos, valores, color='#C8A165', alpha=0.4)
+        fig.patch.set_facecolor('none')
+        ax.set_facecolor('none')
+        ax.set_yticklabels([])
         st.pyplot(fig, use_container_width=True)
 
     st.markdown(f"### Matriz de Rendimiento p/90 ({jugador['Posición']})")
@@ -123,7 +126,7 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
         with tabs[i]:
             cols = st.columns(4)
             for j, metrica in enumerate(lista_metricas):
-                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165;'>API</span></div>", unsafe_allow_html=True)
+                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>API</span></div>", unsafe_allow_html=True)
                 
     with st.expander(f"✏️ Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
@@ -166,72 +169,90 @@ def mostrar_perfil_jugador(jugador, lista_origen, idx_origen):
                 except: pass
             st.rerun()
 
-# 6. ESTÉTICA EXECUTIVE AZUL MARINO (#1A2B4C & #C8A165)
+# 6. ESTÉTICA PROFESIONAL Y ALTO CONTRASTE (CERO RUIDO VISUAL)
 st.markdown("""
     <style>
-    /* Estilos globales */
+    /* Fondo principal gris/blanco higiénico */
     .stApp {
-        background-color: #1A2B4C !important;
-        font-family: 'Trebuchet MS', 'Segoe UI', sans-serif !important;
+        background-color: #F8F9FA !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
+    
+    /* Menú lateral azul marino institucional */
     [data-testid="stSidebar"] {
-        background-color: #111D35 !important;
+        background-color: #1A2B4C !important;
         border-right: 2px solid #C8A165 !important;
     }
     [data-testid="stSidebar"] * {
         color: #FFFFFF !important;
     }
-    /* Tarjeta de login ejecutiva */
-    .login-card {
-        background-color: #1A2B4C;
-        border: 2px solid #C8A165;
-        padding: 35px;
+    
+    /* Tarjeta de Inicio de Sesión limpia y pulida */
+    .login-container {
+        max-width: 420px;
+        margin: 50px auto;
+        padding: 40px;
+        background: #FFFFFF;
         border-radius: 12px;
-        box-shadow: 0px 8px 25px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12);
+        border-top: 5px solid #C8A165;
         text-align: center;
     }
+    
+    /* Tarjetas de Métricas limpias */
     .metric-card {
         background-color: #FFFFFF;
-        border-left: 5px solid #1A2B4C;
-        padding: 10px;
-        border-radius: 5px;
+        border: 1px solid #E2E8F0;
+        border-left: 4px solid #1A2B4C;
+        padding: 12px;
+        border-radius: 6px;
         margin-bottom: 10px;
         color: #1A2B4C;
-        font-size: 12px;
+        font-size: 13px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
+    
+    /* Botones dorados ejecutivos */
     .stButton>button {
         background-color: #C8A165 !important;
         color: #1A2B4C !important;
         font-weight: bold !important;
         border: none !important;
         border-radius: 6px !important;
+        padding: 8px 16px !important;
         width: 100% !important;
+        transition: all 0.2s ease;
     }
     .stButton>button:hover {
-        background-color: #FFFFFF !important;
+        background-color: #1A2B4C !important;
+        color: #FFFFFF !important;
+    }
+    
+    /* Títulos y textos generales */
+    h1, h2, h3 {
         color: #1A2B4C !important;
+        font-weight: 700 !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 7. LOGIN Y NAVEGACIÓN
+# 7. INICIO DE SESIÓN Y NAVEGACIÓN
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2.2, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<div class='login-card'>", unsafe_allow_html=True)
-        col_img_1, col_img_2, col_img_3 = st.columns([1, 1.5, 1])
+        st.markdown("<div class='login-container'>", unsafe_allow_html=True)
+        col_img_1, col_img_2, col_img_3 = st.columns([1, 2, 1])
         with col_img_2:
-            if os.path.exists("logo.png"): st.image("logo.png", width=180)
-            elif os.path.exists("logo.jpg"): st.image("logo.jpg", width=180)
-            else: st.markdown("<h1 style='text-align:center; color:#C8A165; font-size:40px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
+            if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+            elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
+            else: st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
         
         st.markdown("""
-            <h2 style='color:#FFFFFF; margin-top:10px; margin-bottom:0; font-weight:700; font-size:24px;'>SCOUTING PRO</h2>
-            <p style='color:#C8A165; font-size:13px; font-weight:bold; letter-spacing:1px; margin-top:4px;'>SCOUTING INTERNACIONAL Y DIRECCIÓN DEPORTIVA</p>
-            <hr style='border-color:#C8A165; margin: 20px 0;'>
+            <h2 style='color:#1A2B4C; margin-top:15px; margin-bottom:0; font-size:22px; text-align:center;'>SCOUTING PRO</h2>
+            <p style='color:#C8A165; font-size:12px; font-weight:bold; letter-spacing:1px; margin-top:4px; text-align:center;'>SCOUTING INTERNACIONAL Y DIRECCIÓN DEPORTIVA</p>
+            <hr style='border-color:#E2E8F0; margin: 20px 0;'>
         """, unsafe_allow_html=True)
         
         usuario = st.text_input("Usuario Corporativo")
@@ -263,9 +284,9 @@ else:
         if st.button("Cerrar Sesión"):
             st.session_state['logged_in'] = False; st.rerun()
 
-    # MÓDULO 1: DASHBOARD
+    # MÓDULO 1: DASHBOARD GENERAL
     if opcion == "Dashboard General (Scouting)":
-        st.markdown("<h1 style='color:#FFFFFF;'>Inteligencia de Mercado y Seguimiento</h1>", unsafe_allow_html=True)
+        st.title("Inteligencia de Mercado y Seguimiento")
         df_scouting = pd.DataFrame(st.session_state['scouting_db'])
         seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Overall", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
         
@@ -274,7 +295,7 @@ else:
 
     # MÓDULO 2: EQUIPO IGNITION
     elif opcion == "Equipo Ignition":
-        st.markdown("<h1 style='color:#FFFFFF;'>💼 Equipo Ignition</h1>", unsafe_allow_html=True)
+        st.title("💼 Equipo Ignition")
         df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
         seleccion_eq = st.dataframe(df_equipo[["Nombre", "Edad", "Club", "Liga", "Posición", "Status"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
         
@@ -283,7 +304,7 @@ else:
 
     # MÓDULO 3: INGRESO DE DATA 2026/2027
     elif opcion == "Ingreso de Data (Partidos)":
-        st.markdown("<h1 style='color:#FFFFFF;'>📥 Registro Manual de Estadísticas</h1>", unsafe_allow_html=True)
+        st.title("📥 Registro Manual de Estadísticas")
         
         c1, c2 = st.columns(2)
         n_jugador = c1.text_input("Nombre del Jugador")
@@ -327,4 +348,4 @@ else:
                     st.error("Escribe el nombre del jugador.")
 
     else:
-        st.info(f"Módulo '{opcion}' activo y listo para sincronización con Supabase.")
+        st.info(f"Módulo '{opcion}' activo y listo para sincronización.")

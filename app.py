@@ -53,7 +53,7 @@ def cargar_desde_supabase(tabla):
             pass
     return []
 
-# Sincronización inicial de sesiones
+# Sincronización inicial
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
@@ -128,7 +128,7 @@ def obtener_30_metricas(posicion):
             "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints p/90", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
         }
 
-# 4. CONFIGURADOR DEL RADAR DINÁMICO POR POSICIÓN
+# 4. CONFIGURADOR DEL RADAR DINÁMICO POR POSICIÓN Y CÁLCULO P/90
 def obtener_ejes_radar(posicion):
     if posicion == "Portero":
         return ['Reflejos', 'Salidas Aéreas', 'Distribución', '1v1 Ganados', 'Juego de Pies']
@@ -148,7 +148,6 @@ def obtener_ejes_radar(posicion):
         return ['Finalización', 'Juego Aéreo', 'Presencia Área', 'Asociación', 'Presión Alta']
 
 def calcular_valores_radar(nombre_jugador, posicion):
-    # Consultar partidos registrados en Supabase para este jugador
     ejes = obtener_ejes_radar(posicion)
     if supabase and nombre_jugador:
         try:
@@ -164,16 +163,14 @@ def calcular_valores_radar(nombre_jugador, posicion):
                     duelos_p90 = (df_p['duelos_ganados'].sum() / tot_min) * 90
                     inter_p90 = (df_p['intercepciones'].sum() / tot_min) * 90
                     
-                    # Escalamiento dinámico (0-100) según métricas reales
-                    v1 = min(100, int(goles_p90 * 30 + tiros_p90 * 15 + 50))
-                    v2 = min(100, int(asis_p90 * 35 + pases_p90 * 15 + 50))
+                    v1 = min(100, int(goles_p90 * 30 + tiros_p90 * 15 + 40))
+                    v2 = min(100, int(asis_p90 * 35 + pases_p90 * 15 + 40))
                     v3 = min(100, int(inter_p90 * 20 + duelos_p90 * 5 + 40))
                     v4 = min(100, int(duelos_p90 * 8 + 45))
-                    v5 = min(100, int(pases_p90 * 15 + 55))
+                    v5 = min(100, int(pases_p90 * 15 + 50))
                     return ejes, [v1, v2, v3, v4, v5]
         except Exception:
             pass
-    # Valores base por defecto adaptados a la posición si aún no hay partidos
     return ejes, [70, 75, 65, 80, 72]
 
 # 5. LIGAS MUNDIALES Y EQUIPOS 2026/2027 (TRANSFERMARKT)
@@ -209,13 +206,14 @@ EQUIPOS_POR_LIGA = {
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"]
 }
 
-# 6. MOSTRAR PERFIL DE JUGADOR CON RADAR 100% DINÁMICO
+# 6. MOSTRAR PERFIL DE JUGADOR CON ADAPTACIÓN COMPLETA DE IMAGEN Y RADAR
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
     
     col_img, col_info, col_radar = st.columns([1, 2, 2])
     with col_img:
+        # FOTOGRAFÍA ADAPTADA AL MARCO (OBJECT-FIT: CONTAIN)
         foto_src = jugador.get('Foto') if jugador.get('Foto') else "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
         st.markdown(f"""
             <div class="player-photo-card">
@@ -230,7 +228,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
-        # CONSTRUCCIÓN DEL RADAR ADAPTATIVO
+        # RADAR ADAPTATIVO A LA POSICIÓN Y ESTADÍSTICAS REALES
         ejes_dinamicos, valores_dinamicos = calcular_valores_radar(jugador['Nombre'], jugador['Posición'])
         angulos = [n / 5 * 2 * math.pi for n in range(5)]
         angulos += angulos[:1]
@@ -253,7 +251,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         with tabs[i]:
             cols = st.columns(4)
             for j, metrica in enumerate(lista_metricas):
-                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>Sincronizado</span></div>", unsafe_allow_html=True)
+                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>Acumulado p/90</span></div>", unsafe_allow_html=True)
                 
     with st.expander(f"✏️ Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
@@ -295,30 +293,31 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 7. ESTÉTICA ELEGANTE Y FORMATO ESTÁNDAR DE FOTOGRAFÍAS
+# 7. ESTÉTICA ELEGANTE Y FORMATO DE ENCUADRE DE FOTOGRAFÍAS (CONTAIN)
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
     
+    /* MARCO DE ENCUADRE ADAPTATIVO SIN RECORTE BRUSCO */
     .player-photo-card {
         width: 150px;
         height: 180px;
         border-radius: 8px;
         border: 2px solid #C8A165;
         overflow: hidden;
-        background-color: #E2E8F0;
+        background-color: #111D35;
         display: flex;
         justify-content: center;
         align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     .player-photo-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center top;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        object-position: center;
     }
     
     .login-container { max-width: 420px; margin: 50px auto; padding: 40px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }

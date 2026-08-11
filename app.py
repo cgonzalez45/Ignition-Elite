@@ -147,7 +147,7 @@ def consultar_partidos_jugador(nombre_jugador):
     return pd.DataFrame()
 
 # ==============================================================
-# MOTOR MATEMÁTICO V41.0: "DATO DURO" + CANDADOS DE COHERENCIA
+# MOTOR MATEMÁTICO: "DATO DURO" + CANDADOS DE COHERENCIA LÓGICA
 # ==============================================================
 def calcular_promedios_df(df_input):
     if df_input.empty:
@@ -204,16 +204,10 @@ def calcular_promedios_df(df_input):
 
 # 4. LIGAS MUNDIALES E INTERNACIONALES
 LIGAS_MUNDIALES = [
-    "Champions League", 
-    "Europa League", 
-    "Conference League", 
-    "Concacaf Champions Cup", 
-    "Copa Centroamericana", 
-    "Leagues Cup", 
-    "Copa Libertadores", 
-    "Copa Sudamericana",
+    "Champions League", "Europa League", "Conference League", 
+    "Concacaf Champions Cup", "Copa Centroamericana", "Leagues Cup", 
+    "Copa Libertadores", "Copa Sudamericana",
     "Copa Doméstica / Otra Competencia (Escribir)",
-    
     "Liga Portugal", "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
     "Premier League", "Championship", "League One", "League Two",
@@ -221,16 +215,14 @@ LIGAS_MUNDIALES = [
     "Bundesliga", "2. Bundesliga", "Allsvenskan", "Eliteserien",
     "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
     "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
-    "Bundesliga Austria", "Superliga de Suiza", "Liga 2 Portugal",
-    "Liga Eslovenia",
+    "Bundesliga Austria", "Superliga de Suiza", "Liga 2 Portugal", "Liga Eslovenia",
     "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
     "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
     "MLS", "MLS Next Pro", "USL", "J-League"
 ]
 
 JORNADAS_OPCIONES = [f"Jornada {i}" for i in range(1, 39)] + [
-    "Fase de Grupos", 
-    "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
+    "Fase de Grupos", "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
     "2da Ronda Previa — Ida", "2da Ronda Previa — Vuelta",
     "3ra Ronda Previa — Ida", "3ra Ronda Previa — Vuelta",
     "Playoffs Previa — Ida", "Playoffs Previa — Vuelta",
@@ -461,7 +453,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             cm2.metric("Semáforo de Viabilidad", via_m_clean)
             cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN PROTEGIDO POR ROLES (SOLO ADMIN)
+    # MÓDULO DE EDICIÓN (SOLO ADMIN)
     if st.session_state.get('role') == 'admin':
         with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
             c_ed1, c_ed2 = st.columns(2)
@@ -503,12 +495,8 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
                 
                 payload = {
-                    "nombre": nuevo_nom, 
-                    "edad": nueva_edad, 
-                    "posicion": nueva_pos,
-                    "liga": nueva_liga, 
-                    "club": nuevo_club, 
-                    "foto": foto_base64
+                    "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
+                    "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64
                 }
                 if nueva_nac: payload["nacionalidad"] = nueva_nac
                 if nueva_agencia: payload["agencia"] = nueva_agencia
@@ -536,46 +524,29 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                     except Exception as e:
                         st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA
+# 6. ESTÉTICA GLOBAL
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
     
-    .player-photo-card {
-        width: 150px;
-        height: 180px;
-        border-radius: 8px;
-        border: 2px solid #C8A165;
-        overflow: hidden;
-        background-color: #111D35;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    .player-photo-img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        object-position: center;
-    }
-    
+    .player-photo-card { width: 150px; height: 180px; border-radius: 8px; border: 2px solid #C8A165; overflow: hidden; background-color: #111D35; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .player-photo-img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; }
     .metric-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-left: 4px solid #1A2B4C; padding: 12px; border-radius: 6px; margin-bottom: 10px; color: #1A2B4C; font-size: 13px; }
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; }
     .stButton>button:hover { background-color: #1A2B4C !important; color: #FFFFFF !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (FONDO COMPLETO FULL-SCREEN Y ROLES)
+# 7. SESIÓN Y NAVEGACIÓN (LOGIN HERO FULL SCREEN & ROLES)
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
 
 if not st.session_state['logged_in']:
     
-    # 📸 CONVERSIÓN DE IMAGEN A CSS PARA FONDO COMPLETO
+    # CSS DINÁMICO PARA FONDO Y MÓDULO DE CRISTAL
     bg_image_path = None
     for img_name in ["image_8fb87b.jpeg", "image_8fb87b.jpg", "image_8fb87b.png", "login_hero.jpeg", "login_hero.jpg", "login_hero.png"]:
         if os.path.exists(img_name):
@@ -589,7 +560,6 @@ if not st.session_state['logged_in']:
         
         st.markdown(f"""
         <style>
-        /* Fondo de pantalla completa */
         .stApp {{
             background-image: url("data:{mime_type};base64,{encoded_string}") !important;
             background-size: cover !important;
@@ -597,45 +567,44 @@ if not st.session_state['logged_in']:
             background-repeat: no-repeat !important;
             background-attachment: fixed !important;
         }}
-        /* Hacer invisible la cabecera vacía de Streamlit */
-        [data-testid="stHeader"] {{
-            background-color: transparent !important;
-        }}
-        /* Tarjeta de login esmerilada (Glassmorphism) */
+        [data-testid="stHeader"] {{ background-color: transparent !important; }}
+        
+        /* Módulo Azul Marino de Cristal */
         [data-testid="column"]:nth-of-type(2) {{
-            background: rgba(255, 255, 255, 0.85) !important;
+            background: rgba(26, 43, 76, 0.90) !important;
             backdrop-filter: blur(12px) !important;
             border-radius: 16px !important;
             padding: 40px !important;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
             border-top: 6px solid #C8A165 !important;
+            border-bottom: 6px solid #C8A165 !important;
             margin-top: 15vh !important;
         }}
+        /* Títulos en Blanco */
+        .log-title {{ color: #FFFFFF; font-size: 38px; font-weight: 900; text-align: center; margin: 0; letter-spacing: 2px; }}
+        .log-subtitle {{ color: #FFFFFF; font-size: 18px; font-weight: 400; text-align: center; margin: 0; letter-spacing: 1px; }}
+        .log-tag {{ color: #C8A165; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-align: center; margin-top: 8px; margin-bottom: 25px; }}
+        /* Etiquetas Blancas para los inputs */
+        .stTextInput label {{ color: #FFFFFF !important; font-weight: 600 !important; font-size: 14px !important; }}
         </style>
         """, unsafe_allow_html=True)
     else:
-        # Fallback por si la imagen no se encuentra
         st.markdown("""
         <style>
-        [data-testid="column"]:nth-of-type(2) {
-            background: #FFFFFF !important;
-            border-radius: 16px !important;
-            padding: 40px !important;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2) !important;
-            border-top: 6px solid #C8A165 !important;
-            margin-top: 15vh !important;
-        }
+        [data-testid="column"]:nth-of-type(2) { background: #1A2B4C !important; border-radius: 16px !important; padding: 40px !important; border-top: 6px solid #C8A165 !important; margin-top: 15vh !important; }
+        .log-title { color: #FFFFFF; font-size: 38px; font-weight: 900; text-align: center; margin: 0; }
+        .log-subtitle { color: #FFFFFF; font-size: 18px; text-align: center; margin: 0; }
+        .log-tag { color: #C8A165; font-size: 11px; text-align: center; margin-top: 8px; margin-bottom: 25px; }
+        .stTextInput label { color: #FFFFFF !important; }
         </style>
         """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.5, 1])
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        # Textos flotando sobre la caja
         st.markdown("""
-            <h1 style='color:#1A2B4C; margin:0; font-size:38px; text-align:center; font-weight:900;'>IGNITION</h1>
-            <h2 style='color:#1A2B4C; margin:0; font-size:20px; text-align:center;'>SCOUTING PRO</h2>
-            <p style='color:#C8A165; font-size:12px; font-weight:bold; letter-spacing:1px; margin-top:5px; text-align:center;'>DIRECCIÓN DEPORTIVA E INTELIGENCIA TÁCTICA</p>
-            <hr style='border-color:#1A2B4C; opacity:0.1; margin: 25px 0;'>
+            <div class='log-title'>IGNITION</div>
+            <div class='log-subtitle'>SCOUTING PRO</div>
+            <div class='log-tag'>DIRECCIÓN DEPORTIVA E INTELIGENCIA TÁCTICA</div>
         """, unsafe_allow_html=True)
         
         usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
@@ -667,7 +636,6 @@ else:
         
         st.write("---")
         
-        # MENÚ DINÁMICO SEGÚN ROL DE USUARIO
         menu_items = [
             "Dashboard General (Scouting)", 
             "Equipo Ignition", 
@@ -688,7 +656,6 @@ else:
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        # CREACIÓN PROTEGIDA (SOLO ADMIN)
         if st.session_state.get('role') == 'admin':
             with st.expander("Crear Nuevo Jugador a Scoutear"):
                 c_a, c_b = st.columns(2)
@@ -742,7 +709,6 @@ else:
     elif opcion == "Equipo Ignition":
         st.title("Equipo Ignition")
         
-        # AÑADIR A EQUIPO PROTEGIDO (SOLO ADMIN)
         if st.session_state.get('role') == 'admin':
             with st.expander("Añadir Jugador a Equipo Ignition"):
                 c_a, c_b = st.columns(2)
@@ -791,7 +757,6 @@ else:
                 mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
 
     elif opcion == "Ingreso de Data (Partidos)":
-        # REDUNDANCIA DE SEGURIDAD
         if st.session_state.get('role') != 'admin':
             st.error("Acceso denegado. No tienes permisos para ingresar o editar datos tácticos.")
         else:
@@ -806,7 +771,6 @@ else:
                 todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
             todos_jugadores = list(set(todos_jugadores))
             
-            # PESTAÑA A: CAPTURAR NUEVO PARTIDO
             with tab_captura:
                 c1, c2 = st.columns(2)
                 if todos_jugadores:
@@ -880,7 +844,6 @@ else:
                             except Exception as e:
                                 st.error(f"Error al escribir en Supabase: {e}")
 
-            # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
             with tab_edicion:
                 st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
                 

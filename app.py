@@ -184,11 +184,8 @@ def calcular_promedios_df(df_input):
             
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES E INTERNACIONALES COMPLETAS
+# 4. LIGAS MUNDIALES E INTERNACIONALES DEPURADAS
 LIGAS_MUNDIALES = [
-    "Previa UCL", 
-    "Previa UEL", 
-    "Previa UECL", 
     "Champions League", 
     "Europa League", 
     "Conference League", 
@@ -207,7 +204,7 @@ LIGAS_MUNDIALES = [
     "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
     "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
     "Bundesliga Austria", "Superliga de Suiza", "Liga Portugal", "Liga 2 Portugal",
-    "Liga Eslovaquia", "Liga Eslovenia",
+    "Liga Eslovenia",
     "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
     "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
     "MLS", "MLS Next Pro", "USL", "J-League"
@@ -707,7 +704,7 @@ else:
             todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
         todos_jugadores = list(set(todos_jugadores))
         
-        # PESTAÑA A: CAPTURAR NUEVO PARTIDO CON ETAPAS DE IDA Y VUELTA
+        # PESTAÑA A: CAPTURAR NUEVO PARTIDO
         with tab_captura:
             c1, c2 = st.columns(2)
             if todos_jugadores:

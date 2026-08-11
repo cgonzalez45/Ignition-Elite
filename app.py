@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import math
 import os
 import base64
+
 from supabase import create_client, Client
 
 # 1. CONFIGURACIÓN DE PÁGINA
@@ -345,18 +346,9 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
                 
-                cp1, cp2, cp3, cp4 = st.columns(4)
-                cp1.metric("Minutos Jugados", f"{p_data['minutos']}'")
-                cp2.metric("Goles Anotados", p_data['goles'])
-                cp3.metric("Asistencias", p_data['asistencias'])
-                cp4.metric("Tiros a Puerta", p_data['tiros'])
-                
-                cp5, cp6, cp7, cp8 = st.columns(4)
-                cp5.metric("Pases Clave", p_data['pases_clave'])
-                cp6.metric("Duelos Ganados", p_data['duelos_ganados'])
-                cp7.metric("Intercepciones", p_data['intercepciones'])
-                cp8.metric("Faltas Cometidas", p_data['faltas'])
-                
+                # Extraer mapa de métricas m_data si existe
+                m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
+
                 st.markdown("#### Matriz de Acciones Reales del Partido (Conteos Absolutos)")
                 metricas_q = obtener_30_metricas(jugador['Posición'])
                 m_tabs_p = st.tabs(list(metricas_q.keys()))
@@ -365,19 +357,21 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                         cols = st.columns(4)
                         for j, metrica in enumerate(lista_m):
                             val_str = "0"
-                            if "Goles" in metrica: val_str = f"{p_data['goles']} en el juego"
-                            elif "Asistencias" in metrica: val_str = f"{p_data['asistencias']} en el juego"
-                            elif "Tiros" in metrica: val_str = f"{p_data['tiros']} tiro(s)"
-                            elif "Pases" in metrica: val_str = f"{p_data['pases_clave']} pases clave"
-                            elif "Duelos" in metrica: val_str = f"{p_data['duelos_ganados']} duelos"
-                            elif "Intercepciones" in metrica: val_str = f"{p_data['intercepciones']} interc."
-                            elif "Minutos" in metrica: val_str = f"{p_data['minutos']} minutos"
-                            else: val_str = "Registrado"
+                            if metrica in m_custom:
+                                val_str = str(m_custom[metrica])
+                            elif "Goles" in metrica: val_str = f"{p_data.get('goles', 0)}"
+                            elif "Asistencias" in metrica: val_str = f"{p_data.get('asistencias', 0)}"
+                            elif "Tiros" in metrica: val_str = f"{p_data.get('tiros', 0)}"
+                            elif "Pases" in metrica: val_str = f"{p_data.get('pases_clave', 0)}"
+                            elif "Duelos" in metrica: val_str = f"{p_data.get('duelos_ganados', 0)}"
+                            elif "Intercepciones" in metrica: val_str = f"{p_data.get('intercepciones', 0)}"
+                            elif "Minutos" in metrica: val_str = f"{p_data.get('minutos', 0)}'"
+                            else: val_str = "0"
                             cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#1A2B4C; font-weight:bold;'>{val_str}</span></div>", unsafe_allow_html=True)
             else:
                 st.info("No hay fichas de partidos individuales cargadas para este jugador.")
 
-    # TAB 3: MERCADO & VIABILIDAD (PARSEO DEFENSIVO)
+    # TAB 3: MERCADO & VIABILIDAD
     with pestanas_principales[2]:
         st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
         cm1, cm2, cm3 = st.columns(3)
@@ -385,7 +379,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         val_m = jugador.get('Valor', 'N/D')
         via_m = str(jugador.get('Viabilidad', 'Media'))
         
-        # Normalizar texto para la vista
         if "Alta" in via_m: via_m_clean = "Alta"
         elif "Baja" in via_m: via_m_clean = "Baja"
         else: via_m_clean = "Media"
@@ -396,11 +389,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         cm1.metric("Valoración Estimada de Mercado", val_m)
         cm2.metric("Semáforo de Viabilidad", via_m_clean)
         cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
-        
-        st.markdown("---")
-        st.markdown("##### Notas Estratégicas de Negociación")
-        st.write(f"- **Perfil Financiero:** Jugador tasado en `{val_m}` accesible bajo esquema de cesión o compra de porcentaje de pase.")
-        st.write(f"- **Factibilidad:** Calificado con viabilidad `{via_m_clean}` según estatus de contrato actual en {jugador['Club']}.")
 
     # MÓDULO DE EDICIÓN CON ÍNDICES DEFENSIVOS
     with st.expander(f"Editar Perfil y Subir Foto de {jugador['Nombre']}"):
@@ -415,7 +403,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
         nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
         
-        # Parseo defensivo para la lista ["Alta", "Media", "Baja"]
         v_raw = str(jugador.get('Viabilidad', 'Media'))
         if "Alta" in v_raw: v_idx = 0
         elif "Baja" in v_raw: v_idx = 2
@@ -459,7 +446,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA SOBRIA Y CORPORATIVA
+# 6. ESTÉTICA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -630,8 +617,21 @@ else:
         st.title("Registro Manual de Estadísticas de Partido")
         
         c1, c2 = st.columns(2)
-        n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
-        n_posicion = c1.selectbox("Posición Específica", LISTA_POSICIONES, key="p_pos_input")
+        
+        # 1. Lista de jugadores dinámicos
+        todos_jugadores = []
+        if 'scouting_db' in st.session_state:
+            todos_jugadores += [j['Nombre'] for j in st.session_state['scouting_db']]
+        if 'equipo_ignition' in st.session_state:
+            todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
+        todos_jugadores = list(set(todos_jugadores))
+        
+        if todos_jugadores:
+            n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
+        else:
+            n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
+            
+        n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
         
         n_liga = c2.selectbox("Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
         if n_liga in EQUIPOS_POR_LIGA:
@@ -640,39 +640,67 @@ else:
             n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
             
         n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
+        v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
+
+        # FORMULARIO ADAPTATIVO A LAS 30 MÉTRICAS DE LA POSICIÓN SELECCIONADA
+        st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
+        metricas_pos = obtener_30_metricas(n_posicion)
         
-        with st.form("form_stats_partido"):
-            st.markdown("#### Registro de Acciones del Partido")
-            cd1, cd2, cd3, cd4 = st.columns(4)
-            with cd1: 
-                v_minutos = st.number_input("Minutos Jugados", 0, 120, 90)
-                v_goles = st.number_input("Goles", 0, 10, 0)
-            with cd2: 
-                v_asis = st.number_input("Asistencias", 0, 10, 0)
-                v_tiros = st.number_input("Tiros a Puerta", 0, 20, 0)
-            with cd3:
-                v_pases = st.number_input("Pases Clave", 0, 20, 0)
-                v_duelos = st.number_input("Duelos Ganados", 0, 40, 0)
-            with cd4:
-                v_intercep = st.number_input("Intercepciones", 0, 30, 0)
-                v_faltas = st.number_input("Faltas Cometidas", 0, 20, 0)
-                
-            if st.form_submit_button("Guardar Estadísticas en Supabase"):
+        valores_capturados = {}
+        with st.form("form_stats_dinamico"):
+            tabs_p = st.tabs(list(metricas_pos.keys()))
+            for i, (pilar, lista_m) in enumerate(metricas_pos.items()):
+                with tabs_p[i]:
+                    cols = st.columns(4)
+                    for j, metrica in enumerate(lista_m):
+                        # Detectar si es porcentaje o flotante
+                        if "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                            val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
+                        else:
+                            val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
+                        valores_capturados[metrica] = val
+            
+            if st.form_submit_button("Guardar Partido en Supabase"):
                 if n_jugador and supabase:
+                    # Mapeo de compatibilidad base
+                    goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
+                    asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
+                    tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
+                    pases_cap = int(valores_capturados.get("Pases Clave", 0))
+                    duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
+                    inter_cap = int(valores_capturados.get("Intercepciones", 0))
+                    
                     stats_partido = {
-                        "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
-                        "equipo": n_equipo, "jornada": n_jornada, "minutos": v_minutos,
-                        "goles": v_goles, "asistencias": v_asis, "tiros": v_tiros,
-                        "pases_clave": v_pases, "duelos_ganados": v_duelos,
-                        "intercepciones": v_intercep, "faltas": v_faltas
+                        "jugador": n_jugador,
+                        "posicion": n_posicion,
+                        "liga": n_liga,
+                        "equipo": n_equipo,
+                        "jornada": n_jornada,
+                        "minutos": v_minutos,
+                        "goles": goles_cap,
+                        "asistencias": asis_cap,
+                        "tiros": tiros_cap,
+                        "pases_clave": pases_cap,
+                        "duelos_ganados": duelos_cap,
+                        "intercepciones": inter_cap,
+                        "m_data": valores_capturados
                     }
                     try:
                         supabase.table('partidos_stats').insert(stats_partido).execute()
-                        st.success(f"Estadísticas guardadas permanentemente para {n_jugador}.")
+                        st.success(f"Estadísticas de {n_posicion} guardadas exitosamente para {n_jugador}.")
                     except Exception as e:
-                        st.error(f"Error al escribir en Supabase: {e}")
-                else:
-                    st.error("Ingresa el nombre del jugador.")
+                        # Respaldo si no está la columna JSON
+                        payload_base = {
+                            "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
+                            "equipo": n_equipo, "jornada": n_jornada, "minutos": v_minutos,
+                            "goles": goles_cap, "asistencias": asis_cap, "tiros": tiros_cap,
+                            "pases_clave": pases_cap, "duelos_ganados": duelos_cap, "intercepciones": inter_cap
+                        }
+                        try:
+                            supabase.table('partidos_stats').insert(payload_base).execute()
+                            st.success(f"Estadísticas guardadas exitosamente para {n_jugador}.")
+                        except Exception as ex:
+                            st.error(f"Error al escribir en Supabase: {ex}")
 
     else:
         st.info(f"Módulo '{opcion}' listo para sincronización.")

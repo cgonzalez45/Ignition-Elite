@@ -148,7 +148,6 @@ def consultar_partidos_jugador(nombre_jugador):
 
 # ==============================================================
 # MOTOR MATEMÁTICO V41.0: "DATO DURO" + CANDADOS DE COHERENCIA
-# Cero extrapolaciones irreales. Realidad pura (Promedio p/P).
 # ==============================================================
 def calcular_promedios_df(df_input):
     if df_input.empty:
@@ -166,7 +165,6 @@ def calcular_promedios_df(df_input):
     for _, row in df_input.iterrows():
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
-        # 1. Suma pura de la matriz de captura (Evita duplicación)
         for k, v in m_custom.items():
             try:
                 val_f = float(v)
@@ -174,7 +172,6 @@ def calcular_promedios_df(df_input):
             except Exception:
                 pass
                 
-        # 2. Respaldo para históricos SOLO si no existen en matriz (Filtro Anti-Doble Suma)
         if "Goles Totales" not in m_custom and "Goles Anotados" not in m_custom:
             sumas["Goles Totales"] = sumas.get("Goles Totales", 0.0) + float(row.get('goles', 0) or 0)
         if "Asistencias Directas" not in m_custom and "Asistencias Totales" not in m_custom:
@@ -188,21 +185,18 @@ def calcular_promedios_df(df_input):
         if "Intercepciones" not in m_custom:
             sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
 
-    # 3. CÁLCULO DE PROMEDIO POR PARTIDO JUGADO (REALIDAD)
     for k, total_val in sumas.items():
         if "%" in k or "Velocidad" in k:
-            promedios[k] = round(total_val / tot_partidos, 1) # Porcentajes y km/h puros
+            promedios[k] = round(total_val / tot_partidos, 1)
         elif "Minutos" in k:
             promedios[k] = round(total_val / tot_partidos, 0)
         else:
-            promedios[k] = round(total_val / tot_partidos, 2) # Acciones crudas promediadas
+            promedios[k] = round(total_val / tot_partidos, 2)
 
-    # 4. CANDADOS DE COHERENCIA LÓGICA (SANITY CHECKS)
-    # Candado A: Los Goles no pueden ser mayores a los Tiros a Puerta
+    # CANDADOS LÓGICOS DE SEGURIDAD (SANITY CHECKS)
     if promedios.get("Goles Totales", 0) > promedios.get("Tiros a Puerta", 0):
         promedios["Tiros a Puerta"] = promedios["Goles Totales"]
         
-    # Candado B: Los Tiros a Puerta no pueden ser mayores a los Tiros Totales
     if promedios.get("Tiros a Puerta", 0) > promedios.get("Tiros Totales", promedios.get("Tiros a Puerta", 0)):
         promedios["Tiros Totales"] = promedios["Tiros a Puerta"]
         
@@ -361,7 +355,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                         cols = st.columns(4)
                         for j, metrica in enumerate(lista_m):
                             val_calculado = promedios_gen.get(metrica, 0.0)
-                            # Etiqueta adaptada: Porcentajes, km/h o Promedio por Partido (p/P)
                             unit = "%" if "%" in metrica else (" km/h" if "Velocidad" in metrica else ("" if "Minutos" in metrica else " p/P"))
                             cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado}{unit}</span></div>", unsafe_allow_html=True)
 
@@ -468,79 +461,80 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             cm2.metric("Semáforo de Viabilidad", via_m_clean)
             cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN
-    with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
-        c_ed1, c_ed2 = st.columns(2)
-        nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
-        nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
-        
-        pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
-        nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
-        
-        nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
-        nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
-        
-        if tabla_origen == 'scouting_db':
-            nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
-            v_raw = str(jugador.get('Viabilidad', 'Media'))
-            v_idx = 0 if "Alta" in v_raw else (2 if "Baja" in v_raw else 1)
-            nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=v_idx, key=f"via_{jugador['ID']}")
-        else:
-            status_opciones = ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"]
-            st_raw = str(jugador.get('Status', 'OBJETIVO'))
-            st_idx = status_opciones.index(st_raw) if st_raw in status_opciones else 0
-            nuevo_status = c_ed2.selectbox("Estatus", status_opciones, index=st_idx, key=f"st_{jugador['ID']}")
-
-        nueva_liga_sel = c_ed2.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
-        if "Copa Doméstica" in nueva_liga_sel:
-            nueva_liga = c_ed2.text_input("Nombre de la Copa (ej. Copa del Rey, Slovnaft Cup)", value=jugador.get('Liga', ''), key=f"lg_copa_txt_edit_{jugador['ID']}")
-        else:
-            nueva_liga = nueva_liga_sel
-
-        if nueva_liga in EQUIPOS_POR_LIGA:
-            nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
-        else:
-            nuevo_club = c_ed2.text_input("Club (Escribir nombre)", value=jugador['Club'], key=f"cl_txt_edit_{jugador['ID']}")
+    # MÓDULO DE EDICIÓN PROTEGIDO POR ROLES (SOLO ADMIN)
+    if st.session_state.get('role') == 'admin':
+        with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
+            c_ed1, c_ed2 = st.columns(2)
+            nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
+            nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
             
-        nueva_foto = st.file_uploader("Subir Foto de Perfil (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
-        
-        col_btn1, col_btn2 = st.columns([1, 1])
-        if col_btn1.button("Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
-            foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
+            pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
+            nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
             
-            payload = {
-                "nombre": nuevo_nom, 
-                "edad": nueva_edad, 
-                "posicion": nueva_pos,
-                "liga": nueva_liga, 
-                "club": nuevo_club, 
-                "foto": foto_base64
-            }
-            if nueva_nac: payload["nacionalidad"] = nueva_nac
-            if nueva_agencia: payload["agencia"] = nueva_agencia
-
+            nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
+            nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
+            
             if tabla_origen == 'scouting_db':
-                payload["valor"] = nuevo_val
-                payload["viabilidad"] = nueva_viab
+                nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
+                v_raw = str(jugador.get('Viabilidad', 'Media'))
+                v_idx = 0 if "Alta" in v_raw else (2 if "Baja" in v_raw else 1)
+                nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=v_idx, key=f"via_{jugador['ID']}")
             else:
-                payload["status"] = nuevo_status
+                status_opciones = ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"]
+                st_raw = str(jugador.get('Status', 'OBJETIVO'))
+                st_idx = status_opciones.index(st_raw) if st_raw in status_opciones else 0
+                nuevo_status = c_ed2.selectbox("Estatus", status_opciones, index=st_idx, key=f"st_{jugador['ID']}")
 
-            if supabase and jugador.get('ID'):
-                try:
-                    supabase.table(tabla_origen).update(payload).eq('id', jugador['ID']).execute()
-                    st.success("Guardado en Supabase exitoso.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error en Supabase: {e}")
+            nueva_liga_sel = c_ed2.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
+            if "Copa Doméstica" in nueva_liga_sel:
+                nueva_liga = c_ed2.text_input("Nombre de la Copa (ej. Copa del Rey, Slovnaft Cup)", value=jugador.get('Liga', ''), key=f"lg_copa_txt_edit_{jugador['ID']}")
+            else:
+                nueva_liga = nueva_liga_sel
+
+            if nueva_liga in EQUIPOS_POR_LIGA:
+                nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
+            else:
+                nuevo_club = c_ed2.text_input("Club (Escribir nombre)", value=jugador['Club'], key=f"cl_txt_edit_{jugador['ID']}")
+                
+            nueva_foto = st.file_uploader("Subir Foto de Perfil (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
             
-        if col_btn2.button("Eliminar Perfil", key=f"dl_{jugador['ID']}"):
-            if supabase and jugador.get('ID'):
-                try: 
-                    supabase.table(tabla_origen).delete().eq('id', jugador['ID']).execute()
-                    st.success("Jugador eliminado.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error al eliminar: {e}")
+            col_btn1, col_btn2 = st.columns([1, 1])
+            if col_btn1.button("Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
+                foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
+                
+                payload = {
+                    "nombre": nuevo_nom, 
+                    "edad": nueva_edad, 
+                    "posicion": nueva_pos,
+                    "liga": nueva_liga, 
+                    "club": nuevo_club, 
+                    "foto": foto_base64
+                }
+                if nueva_nac: payload["nacionalidad"] = nueva_nac
+                if nueva_agencia: payload["agencia"] = nueva_agencia
+
+                if tabla_origen == 'scouting_db':
+                    payload["valor"] = nuevo_val
+                    payload["viabilidad"] = nueva_viab
+                else:
+                    payload["status"] = nuevo_status
+
+                if supabase and jugador.get('ID'):
+                    try:
+                        supabase.table(tabla_origen).update(payload).eq('id', jugador['ID']).execute()
+                        st.success("Guardado en Supabase exitoso.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error en Supabase: {e}")
+                
+            if col_btn2.button("Eliminar Perfil", key=f"dl_{jugador['ID']}"):
+                if supabase and jugador.get('ID'):
+                    try: 
+                        supabase.table(tabla_origen).delete().eq('id', jugador['ID']).execute()
+                        st.success("Jugador eliminado.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al eliminar: {e}")
 
 # 6. ESTÉTICA
 st.markdown("""
@@ -575,23 +569,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (LOGIN HERO INDEPENDIENTE)
-if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
+# 7. SESIÓN Y NAVEGACIÓN (SEGURIDAD Y ROLES)
+if 'logged_in' not in st.session_state: 
+    st.session_state['logged_in'] = False
+    st.session_state['role'] = 'viewer'
 
 if not st.session_state['logged_in']:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<div class='login-container'>", unsafe_allow_html=True)
         
-        # 📸 BÚSQUEDA EXCLUSIVA DE IMAGEN DE PORTADA / HERO PARA LOGIN
-        if os.path.exists("login_hero.png"):
-            st.image("login_hero.png", use_container_width=True)
-        elif os.path.exists("login_hero.jpg"):
-            st.image("login_hero.jpg", use_container_width=True)
-        elif os.path.exists("logo.png"):
-            st.image("logo.png", use_container_width=True)
-        elif os.path.exists("logo.jpg"):
-            st.image("logo.jpg", use_container_width=True)
+        # 📸 BÚSQUEDA EXCLUSIVA DE IMAGEN CON SOPORTE JPEG
+        if os.path.exists("image_8fb87b.jpeg"): st.image("image_8fb87b.jpeg", use_container_width=True)
+        elif os.path.exists("image_8fb87b.jpg"): st.image("image_8fb87b.jpg", use_container_width=True)
+        elif os.path.exists("image_8fb87b.png"): st.image("image_8fb87b.png", use_container_width=True)
+        elif os.path.exists("login_hero.jpeg"): st.image("login_hero.jpeg", use_container_width=True)
+        elif os.path.exists("login_hero.jpg"): st.image("login_hero.jpg", use_container_width=True)
+        elif os.path.exists("login_hero.png"): st.image("login_hero.png", use_container_width=True)
+        elif os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+        elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
         else:
             st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
         
@@ -605,8 +601,18 @@ if not st.session_state['logged_in']:
         password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
         st.write("")
         if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
-            if usuario.lower() == "christian" and password == "1234":
+            u_lower = usuario.lower()
+            if u_lower == "christian" and password == "Saopaulo45":
                 st.session_state['logged_in'] = True
+                st.session_state['role'] = 'admin'
+                st.rerun()
+            elif u_lower == "sebastian" and password == "Inmortal1":
+                st.session_state['logged_in'] = True
+                st.session_state['role'] = 'viewer'
+                st.rerun()
+            elif u_lower == "gerardo" and password == "Babui7":
+                st.session_state['logged_in'] = True
+                st.session_state['role'] = 'viewer'
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
@@ -614,68 +620,76 @@ if not st.session_state['logged_in']:
 
 else:
     with st.sidebar:
-        # LOGO ORIGINAL Y SEPARADO PARA EL MENÚ
         if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
         elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
         else: st.markdown("<h2 style='color:#C8A165; text-align:center;'>IGNITION ELITE</h2>", unsafe_allow_html=True)
         
         st.write("---")
-        opcion = st.radio("Navegación Táctica", [
+        
+        # MENÚ DINÁMICO SEGÚN ROL DE USUARIO
+        menu_items = [
             "Dashboard General (Scouting)", 
             "Equipo Ignition", 
-            "Ingreso de Data (Partidos)",
             "Shortlists",
             "Comparador",
             "Scoring por Perfil"
-        ])
+        ]
+        if st.session_state.get('role') == 'admin':
+            menu_items.insert(2, "Ingreso de Data (Partidos)")
+            
+        opcion = st.radio("Navegación Táctica", menu_items)
         st.write("---")
         if st.button("Cerrar Sesión"):
-            st.session_state['logged_in'] = False; st.rerun()
+            st.session_state['logged_in'] = False
+            st.session_state['role'] = 'viewer'
+            st.rerun()
 
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        with st.expander("Crear Nuevo Jugador a Scoutear"):
-            c_a, c_b = st.columns(2)
-            reg_nom = c_a.text_input("Nombre Completo", key="reg_nom_input")
-            reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
-            reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
-            reg_nac = c_a.text_input("Nacionalidad", key="reg_nac_input")
-            
-            reg_val = c_b.text_input("Valor de Mercado (ej. €1.2M)", key="reg_val_input")
-            reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
-            reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["Alta", "Media", "Baja"], key="reg_viab_input")
-            
-            reg_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="reg_liga_dyn")
-            if "Copa Doméstica" in reg_liga_sel:
-                reg_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="reg_liga_copa_txt")
-            else:
-                reg_liga = reg_liga_sel
-
-            if reg_liga in EQUIPOS_POR_LIGA:
-                reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga], key="reg_club_dyn")
-            else:
-                reg_club = c_b.text_input("Club (Escribir nombre)", key="reg_club_txt_dyn")
+        # CREACIÓN PROTEGIDA (SOLO ADMIN)
+        if st.session_state.get('role') == 'admin':
+            with st.expander("Crear Nuevo Jugador a Scoutear"):
+                c_a, c_b = st.columns(2)
+                reg_nom = c_a.text_input("Nombre Completo", key="reg_nom_input")
+                reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
+                reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
+                reg_nac = c_a.text_input("Nacionalidad", key="reg_nac_input")
                 
-            reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="reg_foto_dyn")
-            
-            if st.button("Guardar Jugador en Nube", key="btn_reg_scouting"):
-                if reg_nom and supabase:
-                    f_b64 = procesar_foto(reg_foto)
-                    payload = {
-                        "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
-                        "liga": reg_liga, "club": reg_club, "foto": f_b64,
-                        "valor": reg_val, "viabilidad": reg_viab, "overall": 70
-                    }
-                    if reg_nac: payload["nacionalidad"] = reg_nac
-                    if reg_ag: payload["agencia"] = reg_ag
+                reg_val = c_b.text_input("Valor de Mercado (ej. €1.2M)", key="reg_val_input")
+                reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
+                reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["Alta", "Media", "Baja"], key="reg_viab_input")
+                
+                reg_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="reg_liga_dyn")
+                if "Copa Doméstica" in reg_liga_sel:
+                    reg_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="reg_liga_copa_txt")
+                else:
+                    reg_liga = reg_liga_sel
 
-                    try:
-                        supabase.table('scouting_db').insert(payload).execute()
-                        st.success(f"{reg_nom} guardado en la nube.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error en Supabase: {e}")
+                if reg_liga in EQUIPOS_POR_LIGA:
+                    reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga], key="reg_club_dyn")
+                else:
+                    reg_club = c_b.text_input("Club (Escribir nombre)", key="reg_club_txt_dyn")
+                    
+                reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="reg_foto_dyn")
+                
+                if st.button("Guardar Jugador en Nube", key="btn_reg_scouting"):
+                    if reg_nom and supabase:
+                        f_b64 = procesar_foto(reg_foto)
+                        payload = {
+                            "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
+                            "liga": reg_liga, "club": reg_club, "foto": f_b64,
+                            "valor": reg_val, "viabilidad": reg_viab, "overall": 70
+                        }
+                        if reg_nac: payload["nacionalidad"] = reg_nac
+                        if reg_ag: payload["agencia"] = reg_ag
+
+                        try:
+                            supabase.table('scouting_db').insert(payload).execute()
+                            st.success(f"{reg_nom} guardado en la nube.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error en Supabase: {e}")
 
         if len(st.session_state['scouting_db']) > 0:
             df_scouting = pd.DataFrame(st.session_state['scouting_db'])
@@ -687,44 +701,46 @@ else:
     elif opcion == "Equipo Ignition":
         st.title("Equipo Ignition")
         
-        with st.expander("Añadir Jugador a Equipo Ignition"):
-            c_a, c_b = st.columns(2)
-            eq_nom = c_a.text_input("Nombre Completo", key="eq_nom_input")
-            eq_edad = c_a.number_input("Edad", 15, 45, 20, key="eq_edad_input")
-            eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="eq_pos_input")
-            eq_status = c_a.selectbox("Estatus", ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"], key="eq_status_input")
-            eq_nac = c_a.text_input("Nacionalidad", key="eq_nac_input")
-            eq_ag = c_b.text_input("Agencia de Representación", key="eq_ag_input")
-            
-            eq_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="eq_liga_dyn")
-            if "Copa Doméstica" in eq_liga_sel:
-                eq_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="eq_liga_copa_txt")
-            else:
-                eq_liga = eq_liga_sel
-
-            if eq_liga in EQUIPOS_POR_LIGA:
-                eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga], key="eq_club_dyn")
-            else:
-                eq_club = c_b.text_input("Club (Escribir nombre)", key="eq_club_txt_dyn")
+        # AÑADIR A EQUIPO PROTEGIDO (SOLO ADMIN)
+        if st.session_state.get('role') == 'admin':
+            with st.expander("Añadir Jugador a Equipo Ignition"):
+                c_a, c_b = st.columns(2)
+                eq_nom = c_a.text_input("Nombre Completo", key="eq_nom_input")
+                eq_edad = c_a.number_input("Edad", 15, 45, 20, key="eq_edad_input")
+                eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="eq_pos_input")
+                eq_status = c_a.selectbox("Estatus", ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"], key="eq_status_input")
+                eq_nac = c_a.text_input("Nacionalidad", key="eq_nac_input")
+                eq_ag = c_b.text_input("Agencia de Representación", key="eq_ag_input")
                 
-            eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="eq_foto_dyn")
-            
-            if st.button("Guardar en Equipo Ignition", key="btn_reg_equipo"):
-                if eq_nom and supabase:
-                    f_b64 = procesar_foto(eq_foto)
-                    payload = {
-                        "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
-                        "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
-                    }
-                    if eq_nac: payload["nacionalidad"] = eq_nac
-                    if eq_ag: payload["agencia"] = eq_ag
+                eq_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="eq_liga_dyn")
+                if "Copa Doméstica" in eq_liga_sel:
+                    eq_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="eq_liga_copa_txt")
+                else:
+                    eq_liga = eq_liga_sel
 
-                    try:
-                        supabase.table('equipo_ignition').insert(payload).execute()
-                        st.success(f"{eq_nom} registrado en Supabase.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error en Supabase: {e}")
+                if eq_liga in EQUIPOS_POR_LIGA:
+                    eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga], key="eq_club_dyn")
+                else:
+                    eq_club = c_b.text_input("Club (Escribir nombre)", key="eq_club_txt_dyn")
+                    
+                eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="eq_foto_dyn")
+                
+                if st.button("Guardar en Equipo Ignition", key="btn_reg_equipo"):
+                    if eq_nom and supabase:
+                        f_b64 = procesar_foto(eq_foto)
+                        payload = {
+                            "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
+                            "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
+                        }
+                        if eq_nac: payload["nacionalidad"] = eq_nac
+                        if eq_ag: payload["agencia"] = eq_ag
+
+                        try:
+                            supabase.table('equipo_ignition').insert(payload).execute()
+                            st.success(f"{eq_nom} registrado en Supabase.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error en Supabase: {e}")
 
         if len(st.session_state['equipo_ignition']) > 0:
             df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
@@ -734,202 +750,206 @@ else:
                 mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
 
     elif opcion == "Ingreso de Data (Partidos)":
-        st.title("Registro Manual de Estadísticas de Partido")
-        
-        tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir / Borrar Partido Cargado"])
-        
-        todos_jugadores = []
-        if 'scouting_db' in st.session_state:
-            todos_jugadores += [j['Nombre'] for j in st.session_state['scouting_db']]
-        if 'equipo_ignition' in st.session_state:
-            todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
-        todos_jugadores = list(set(todos_jugadores))
-        
-        # PESTAÑA A: CAPTURAR NUEVO PARTIDO
-        with tab_captura:
-            c1, c2 = st.columns(2)
-            if todos_jugadores:
-                n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
-            else:
-                n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
-                
-            n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
+        # REDUNDANCIA DE SEGURIDAD
+        if st.session_state.get('role') != 'admin':
+            st.error("Acceso denegado. No tienes permisos para ingresar o editar datos tácticos.")
+        else:
+            st.title("Registro Manual de Estadísticas de Partido")
             
-            n_liga_sel = c2.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
-            if "Copa Doméstica" in n_liga_sel:
-                n_liga = c2.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
-            else:
-                n_liga = n_liga_sel
-
-            if n_liga in EQUIPOS_POR_LIGA:
-                n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
-            else:
-                n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
-                
-            n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
-            v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
-
-            st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
-            metricas_pos = obtener_30_metricas(n_posicion)
+            tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir / Borrar Partido Cargado"])
             
-            valores_capturados = {}
-            with st.form("form_stats_dinamico"):
-                tabs_p = st.tabs(list(metricas_pos.keys()))
-                for i, (pilar, lista_m) in enumerate(metricas_pos.items()):
-                    with tabs_p[i]:
-                        cols = st.columns(4)
-                        for j, metrica in enumerate(lista_m):
-                            if "xG Evitados" in metrica or "Diferencia" in metrica:
-                                val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
-                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
-                                val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
-                            else:
-                                val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
-                            valores_capturados[metrica] = val
-                
-                if st.form_submit_button("Guardar Partido en Supabase"):
-                    if n_jugador and supabase:
-                        goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
-                        asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
-                        tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
-                        pases_cap = int(valores_capturados.get("Pases Clave", 0))
-                        duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
-                        inter_cap = int(valores_capturados.get("Intercepciones", 0))
-                        
-                        stats_partido = {
-                            "jugador": n_jugador,
-                            "posicion": n_posicion,
-                            "liga": n_liga,
-                            "equipo": n_equipo,
-                            "jornada": n_jornada,
-                            "minutos": v_minutos,
-                            "goles": goles_cap,
-                            "asistencias": asis_cap,
-                            "tiros": tiros_cap,
-                            "pases_clave": pases_cap,
-                            "duelos_ganados": duelos_cap,
-                            "intercepciones": inter_cap,
-                            "m_data": valores_capturados
-                        }
-                        try:
-                            supabase.table('partidos_stats').insert(stats_partido).execute()
-                            st.cache_data.clear()
-                            st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error al escribir en Supabase: {e}")
-
-        # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
-        with tab_edicion:
-            st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
+            todos_jugadores = []
+            if 'scouting_db' in st.session_state:
+                todos_jugadores += [j['Nombre'] for j in st.session_state['scouting_db']]
+            if 'equipo_ignition' in st.session_state:
+                todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
+            todos_jugadores = list(set(todos_jugadores))
             
-            if todos_jugadores:
-                j_ed_sel = st.selectbox("Seleccionar Jugador para Administrar Partidos:", todos_jugadores, key="j_ed_sel_k")
-                df_p_ed = consultar_partidos_jugador(j_ed_sel)
-                
-                if not df_p_ed.empty:
-                    partidos_lista_ed = [f"ID #{row['id']} - {row['jornada']} vs. {row['equipo']} ({row['liga']})" for _, row in df_p_ed.iterrows()]
-                    partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
-                    
-                    idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
-                    p_curr = df_p_ed.iloc[idx_p_ed]
-                    m_curr_custom = p_curr.get('m_data') if isinstance(p_curr.get('m_data'), dict) else {}
-                    
-                    st.info(f"Editando Registro ID **#{p_curr['id']}** de **{j_ed_sel}**")
-                    
-                    pos_ed = p_curr['posicion']
-                    metricas_pos_ed = obtener_30_metricas(pos_ed)
-                    valores_corregidos = {}
-                    
-                    j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
-                    j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
-                    
-                    l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
-                    l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
-                    
-                    with st.form("form_corregir_partido_completo"):
-                        st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
-                        med_c1, med_c2 = st.columns(2)
-                        
-                        ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key="ed_jornada_k")
-                        ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
-                        
-                        if "Copa Doméstica" in ed_liga_sel:
-                            ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key="ed_liga_copa_txt")
-                        else:
-                            ed_liga = ed_liga_sel
-
-                        if ed_liga in EQUIPOS_POR_LIGA:
-                            eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
-                            e_curr_val = p_curr.get('equipo', eq_opciones[0])
-                            e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
-                            ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key="ed_equipo_k")
-                        else:
-                            ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
-                            
-                        ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
-                        
-                        st.markdown("##### 2. Corrección de Métricas Tácticas")
-                        tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
-                        for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
-                            with tabs_ed[i]:
-                                cols = st.columns(4)
-                                for j, metrica in enumerate(lista_m):
-                                    val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
-                                    if "xG Evitados" in metrica or "Diferencia" in metrica:
-                                        val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}")
-                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
-                                        val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}")
-                                    else:
-                                        val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}")
-                                    valores_corregidos[metrica] = val_c
-                                    
-                        col_ed_b1, col_ed_b2 = st.columns(2)
-                        btn_guardar = col_ed_b1.form_submit_button("💾 Guardar Corrección Completa")
-                        btn_borrar = col_ed_b2.form_submit_button("🗑️ ELIMINAR ESTE PARTIDO")
-                        
-                        if btn_guardar:
-                            if supabase and p_curr.get('id'):
-                                g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
-                                a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
-                                t_c = int(valores_corregidos.get("Tiros a Puerta", valores_corregidos.get("Tiros Totales", 0)))
-                                p_c = int(valores_corregidos.get("Pases Clave", 0))
-                                d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
-                                i_c = int(valores_corregidos.get("Intercepciones", 0))
-                                
-                                payload_update = {
-                                    "jornada": ed_jornada,
-                                    "liga": ed_liga,
-                                    "equipo": ed_equipo,
-                                    "minutos": ed_minutos,
-                                    "goles": g_c,
-                                    "asistencias": a_c,
-                                    "tiros": t_c,
-                                    "pases_clave": p_c,
-                                    "duelos_ganados": d_c,
-                                    "intercepciones": i_c,
-                                    "m_data": valores_corregidos
-                                }
-                                try:
-                                    supabase.table('partidos_stats').update(payload_update).eq('id', p_curr['id']).execute()
-                                    st.cache_data.clear()
-                                    st.success(f"Partido #{p_curr['id']} actualizado correctamente.")
-                                    st.rerun()
-                                except Exception as e_up:
-                                    st.error(f"Error al actualizar: {e_up}")
-
-                        if btn_borrar:
-                            if supabase and p_curr.get('id'):
-                                try:
-                                    supabase.table('partidos_stats').delete().eq('id', p_curr['id']).execute()
-                                    st.cache_data.clear()
-                                    st.success(f"Partido #{p_curr['id']} eliminado permanentemente de Supabase.")
-                                    st.rerun()
-                                except Exception as e_del:
-                                    st.error(f"Error al eliminar: {e_del}")
-                                    
+            # PESTAÑA A: CAPTURAR NUEVO PARTIDO
+            with tab_captura:
+                c1, c2 = st.columns(2)
+                if todos_jugadores:
+                    n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
                 else:
-                    st.info("Este jugador no tiene partidos cargados para corregir o borrar.")
+                    n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
+                    
+                n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
+                
+                n_liga_sel = c2.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
+                if "Copa Doméstica" in n_liga_sel:
+                    n_liga = c2.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
+                else:
+                    n_liga = n_liga_sel
+
+                if n_liga in EQUIPOS_POR_LIGA:
+                    n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
+                else:
+                    n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
+                    
+                n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
+                v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
+
+                st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
+                metricas_pos = obtener_30_metricas(n_posicion)
+                
+                valores_capturados = {}
+                with st.form("form_stats_dinamico"):
+                    tabs_p = st.tabs(list(metricas_pos.keys()))
+                    for i, (pilar, lista_m) in enumerate(metricas_pos.items()):
+                        with tabs_p[i]:
+                            cols = st.columns(4)
+                            for j, metrica in enumerate(lista_m):
+                                if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                    val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
+                                elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                    val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
+                                else:
+                                    val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
+                                valores_capturados[metrica] = val
+                    
+                    if st.form_submit_button("Guardar Partido en Supabase"):
+                        if n_jugador and supabase:
+                            goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
+                            asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
+                            tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
+                            pases_cap = int(valores_capturados.get("Pases Clave", 0))
+                            duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
+                            inter_cap = int(valores_capturados.get("Intercepciones", 0))
+                            
+                            stats_partido = {
+                                "jugador": n_jugador,
+                                "posicion": n_posicion,
+                                "liga": n_liga,
+                                "equipo": n_equipo,
+                                "jornada": n_jornada,
+                                "minutos": v_minutos,
+                                "goles": goles_cap,
+                                "asistencias": asis_cap,
+                                "tiros": tiros_cap,
+                                "pases_clave": pases_cap,
+                                "duelos_ganados": duelos_cap,
+                                "intercepciones": inter_cap,
+                                "m_data": valores_capturados
+                            }
+                            try:
+                                supabase.table('partidos_stats').insert(stats_partido).execute()
+                                st.cache_data.clear()
+                                st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error al escribir en Supabase: {e}")
+
+            # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
+            with tab_edicion:
+                st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
+                
+                if todos_jugadores:
+                    j_ed_sel = st.selectbox("Seleccionar Jugador para Administrar Partidos:", todos_jugadores, key="j_ed_sel_k")
+                    df_p_ed = consultar_partidos_jugador(j_ed_sel)
+                    
+                    if not df_p_ed.empty:
+                        partidos_lista_ed = [f"ID #{row['id']} - {row['jornada']} vs. {row['equipo']} ({row['liga']})" for _, row in df_p_ed.iterrows()]
+                        partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
+                        
+                        idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
+                        p_curr = df_p_ed.iloc[idx_p_ed]
+                        m_curr_custom = p_curr.get('m_data') if isinstance(p_curr.get('m_data'), dict) else {}
+                        
+                        st.info(f"Editando Registro ID **#{p_curr['id']}** de **{j_ed_sel}**")
+                        
+                        pos_ed = p_curr['posicion']
+                        metricas_pos_ed = obtener_30_metricas(pos_ed)
+                        valores_corregidos = {}
+                        
+                        j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
+                        j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
+                        
+                        l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
+                        l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
+                        
+                        with st.form("form_corregir_partido_completo"):
+                            st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
+                            med_c1, med_c2 = st.columns(2)
+                            
+                            ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key="ed_jornada_k")
+                            ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
+                            
+                            if "Copa Doméstica" in ed_liga_sel:
+                                ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key="ed_liga_copa_txt")
+                            else:
+                                ed_liga = ed_liga_sel
+
+                            if ed_liga in EQUIPOS_POR_LIGA:
+                                eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
+                                e_curr_val = p_curr.get('equipo', eq_opciones[0])
+                                e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
+                                ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key="ed_equipo_k")
+                            else:
+                                ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
+                                
+                            ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
+                            
+                            st.markdown("##### 2. Corrección de Métricas Tácticas")
+                            tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
+                            for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
+                                with tabs_ed[i]:
+                                    cols = st.columns(4)
+                                    for j, metrica in enumerate(lista_m):
+                                        val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
+                                        if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                            val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}")
+                                        elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                            val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}")
+                                        else:
+                                            val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}")
+                                        valores_corregidos[metrica] = val_c
+                                        
+                            col_ed_b1, col_ed_b2 = st.columns(2)
+                            btn_guardar = col_ed_b1.form_submit_button("💾 Guardar Corrección Completa")
+                            btn_borrar = col_ed_b2.form_submit_button("🗑️ ELIMINAR ESTE PARTIDO")
+                            
+                            if btn_guardar:
+                                if supabase and p_curr.get('id'):
+                                    g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
+                                    a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
+                                    t_c = int(valores_corregidos.get("Tiros a Puerta", valores_corregidos.get("Tiros Totales", 0)))
+                                    p_c = int(valores_corregidos.get("Pases Clave", 0))
+                                    d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
+                                    i_c = int(valores_corregidos.get("Intercepciones", 0))
+                                    
+                                    payload_update = {
+                                        "jornada": ed_jornada,
+                                        "liga": ed_liga,
+                                        "equipo": ed_equipo,
+                                        "minutos": ed_minutos,
+                                        "goles": g_c,
+                                        "asistencias": a_c,
+                                        "tiros": t_c,
+                                        "pases_clave": p_c,
+                                        "duelos_ganados": d_c,
+                                        "intercepciones": i_c,
+                                        "m_data": valores_corregidos
+                                    }
+                                    try:
+                                        supabase.table('partidos_stats').update(payload_update).eq('id', p_curr['id']).execute()
+                                        st.cache_data.clear()
+                                        st.success(f"Partido #{p_curr['id']} actualizado correctamente.")
+                                        st.rerun()
+                                    except Exception as e_up:
+                                        st.error(f"Error al actualizar: {e_up}")
+
+                            if btn_borrar:
+                                if supabase and p_curr.get('id'):
+                                    try:
+                                        supabase.table('partidos_stats').delete().eq('id', p_curr['id']).execute()
+                                        st.cache_data.clear()
+                                        st.success(f"Partido #{p_curr['id']} eliminado permanentemente de Supabase.")
+                                        st.rerun()
+                                    except Exception as e_del:
+                                        st.error(f"Error al eliminar: {e_del}")
+                                        
+                    else:
+                        st.info("Este jugador no tiene partidos cargados para corregir o borrar.")
 
     else:
         st.info(f"Módulo '{opcion}' listo para sincronización.")

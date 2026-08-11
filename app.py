@@ -144,7 +144,7 @@ def consultar_partidos_jugador(nombre_jugador):
             pass
     return pd.DataFrame()
 
-# 4. TODAS LAS LIGAS MUNDIALES MAPPED (46 COMPETICIONES)
+# 4. TODAS LAS LIGAS MUNDIALES
 LIGAS_MUNDIALES = [
     "Liga MX", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
@@ -181,7 +181,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL SOBRIO Y PROFESIONAL
+# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO CONTRA ERRORES DE TIPO
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -207,19 +207,16 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             st.markdown(f"**Nombre:** {jugador['Nombre']}")
             st.markdown(f"**Edad:** {jugador['Edad']} años")
             st.markdown(f"**Posición Específica:** {jugador['Posición']}")
-            if 'Nacionalidad' in jugador and jugador['Nacionalidad']: 
-                st.markdown(f"**Nacionalidad:** {jugador['Nacionalidad']}")
-            else:
-                st.markdown("**Nacionalidad:** N/D")
+            nac_val = jugador.get('Nacionalidad') or 'N/D'
+            st.markdown(f"**Nacionalidad:** {nac_val}")
 
         with c_inf2:
             st.markdown("##### Situación Contractual")
             st.markdown(f"**Club Actual:** {jugador['Club']}")
             st.markdown(f"**Liga / Competición:** {jugador.get('Liga', 'N/D')}")
-            if 'Agencia' in jugador and jugador['Agencia']: 
-                st.markdown(f"**Agencia / Representante:** {jugador['Agencia']}")
-            if 'Status' in jugador: 
-                st.markdown(f"**Estatus:** {jugador['Status']}")
+            ag_val = jugador.get('Agencia') or 'N/D'
+            st.markdown(f"**Agencia / Representante:** {ag_val}")
+            st.markdown(f"**Estatus:** {jugador.get('Status', 'OBJETIVO')}")
 
     # TAB 2: RENDIMIENTO & DATA
     with pestanas_principales[1]:
@@ -380,24 +377,32 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             else:
                 st.info("No hay fichas de partidos individuales cargadas para este jugador.")
 
-    # TAB 3: MERCADO & VIABILIDAD
+    # TAB 3: MERCADO & VIABILIDAD (PARSEO DEFENSIVO)
     with pestanas_principales[2]:
         st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
         cm1, cm2, cm3 = st.columns(3)
         
         val_m = jugador.get('Valor', 'N/D')
-        via_m = jugador.get('Viabilidad', 'Media')
+        via_m = str(jugador.get('Viabilidad', 'Media'))
+        
+        # Normalizar texto para la vista
+        if "Alta" in via_m: via_m_clean = "Alta"
+        elif "Baja" in via_m: via_m_clean = "Baja"
+        else: via_m_clean = "Media"
+        
+        nac_str = str(jugador.get('Nacionalidad') or '')
+        es_nacional = "Mexicana" in nac_str or "Mexicano" in nac_str or "🇲🇽" in nac_str
         
         cm1.metric("Valoración Estimada de Mercado", val_m)
-        cm2.metric("Semáforo de Viabilidad", via_m)
-        cm3.metric("Cupo NMM / Extranjero", "Aplica" if "Mexicana" not in jugador.get('Nacionalidad', '') else "Nacional")
+        cm2.metric("Semáforo de Viabilidad", via_m_clean)
+        cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
         
         st.markdown("---")
         st.markdown("##### Notas Estratégicas de Negociación")
         st.write(f"- **Perfil Financiero:** Jugador tasado en `{val_m}` accesible bajo esquema de cesión o compra de porcentaje de pase.")
-        st.write(f"- **Factibilidad:** Calificado con viabilidad `{via_m}` según estatus de contrato actual en {jugador['Club']}.")
+        st.write(f"- **Factibilidad:** Calificado con viabilidad `{via_m_clean}` según estatus de contrato actual en {jugador['Club']}.")
 
-    # MÓDULO DE EDICIÓN
+    # MÓDULO DE EDICIÓN CON ÍNDICES DEFENSIVOS
     with st.expander(f"Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
@@ -409,7 +414,14 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
         nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
         nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
-        nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=["Alta", "Media", "Baja"].index(jugador.get('Viabilidad', 'Media')), key=f"via_{jugador['ID']}")
+        
+        # Parseo defensivo para la lista ["Alta", "Media", "Baja"]
+        v_raw = str(jugador.get('Viabilidad', 'Media'))
+        if "Alta" in v_raw: v_idx = 0
+        elif "Baja" in v_raw: v_idx = 2
+        else: v_idx = 1
+        
+        nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=v_idx, key=f"via_{jugador['ID']}")
         
         nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:

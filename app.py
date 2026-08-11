@@ -135,7 +135,7 @@ def obtener_ejes_radar(posicion):
     elif posicion == "Extremo": return ['Desequilibrio', 'Centros', 'Finalización', 'Aceleración', 'Presión Alta']
     else: return ['Finalización', 'Juego Aéreo', 'Presencia Área', 'Asociación', 'Presión Alta']
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=3)
 def consultar_partidos_jugador(nombre_jugador):
     if supabase and nombre_jugador:
         try:
@@ -145,6 +145,49 @@ def consultar_partidos_jugador(nombre_jugador):
         except Exception:
             pass
     return pd.DataFrame()
+
+# FUNCIÓN AUXILIAR PARA CALCULAR PROMEDIOS P/90 DE TODAS LAS MÉTRICAS
+def calcular_promedios_df(df_input):
+    if df_input.empty:
+        return {}, 0, 0
+    
+    tot_min = df_input['minutos'].sum() if 'minutos' in df_input.columns else 0
+    tot_partidos = len(df_input)
+    
+    if tot_min == 0:
+        return {}, tot_partidos, 0
+    
+    promedios = {}
+    sumas = {}
+    
+    # Recorrer filas y acumular
+    for _, row in df_input.iterrows():
+        m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
+        
+        # Mapear métricas de la columna JSON m_data
+        for k, v in m_custom.items():
+            try:
+                val_f = float(v)
+                sumas[k] = sumas.get(k, 0.0) + val_f
+            except Exception:
+                pass
+                
+        # Campos nativos de respaldo
+        sumas["Goles Totales"] = sumas.get("Goles Totales", 0.0) + float(row.get('goles', 0) or 0)
+        sumas["Asistencias Directas"] = sumas.get("Asistencias Directas", 0.0) + float(row.get('asistencias', 0) or 0)
+        sumas["Tiros a Puerta"] = sumas.get("Tiros a Puerta", 0.0) + float(row.get('tiros', 0) or 0)
+        sumas["Pases Clave"] = sumas.get("Pases Clave", 0.0) + float(row.get('pases_clave', 0) or 0)
+        sumas["Duelos Ganados"] = sumas.get("Duelos Ganados", 0.0) + float(row.get('duelos_ganados', 0) or 0)
+        sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
+
+    # Convertir a p/90 o promedio de porcentaje
+    for k, total_val in sumas.items():
+        if "%" in k:
+            promedios[k] = round(total_val / tot_partidos, 1)
+        else:
+            promedios[k] = round((total_val / tot_min) * 90, 2)
+            
+    return promedios, tot_partidos, tot_min
 
 # 4. TODAS LAS LIGAS MUNDIALES
 LIGAS_MUNDIALES = [
@@ -183,7 +226,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO
+# 5. MOSTRAR PERFIL CON CÁLCULO REAL P/90
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -220,37 +263,36 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             st.markdown(f"**Agencia / Representante:** {ag_val}")
             st.markdown(f"**Estatus:** {jugador.get('Status', 'OBJETIVO')}")
 
-    # TAB 2: RENDIMIENTO & DATA
+    # TAB 2: RENDIMIENTO & DATA (PROMEDIOS REALES CALCULADOS)
     with pestanas_principales[1]:
         st.markdown("### Centro de Análisis Estadístico")
         sub_vistas = st.tabs(["Compendio General (p/90)", "Promedio por Torneo", "Ficha de Partido Único"])
         
-        tot_min = df_partidos['minutos'].sum() if not df_partidos.empty else 0
-        tot_partidos = len(df_partidos) if not df_partidos.empty else 0
-        
         # Sub-vista 1: Compendio General
         with sub_vistas[0]:
+            promedios_gen, tot_p, tot_m = calcular_promedios_df(df_partidos)
             c_rad, c_mat = st.columns([1.2, 2.8])
             
+            # Radar dinámico ajustado
             val_radar = [70, 75, 65, 80, 72]
-            if tot_min > 0:
-                g_p90 = (df_partidos['goles'].sum() / tot_min) * 90
-                a_p90 = (df_partidos['asistencias'].sum() / tot_min) * 90
-                t_p90 = (df_partidos['tiros'].sum() / tot_min) * 90
-                p_p90 = (df_partidos['pases_clave'].sum() / tot_min) * 90
-                d_p90 = (df_partidos['duelos_ganados'].sum() / tot_min) * 90
-                i_p90 = (df_partidos['intercepciones'].sum() / tot_min) * 90
+            if tot_m > 0:
+                g_p = promedios_gen.get("Goles Totales", 0.0)
+                a_p = promedios_gen.get("Asistencias Directas", 0.0)
+                t_p = promedios_gen.get("Tiros a Puerta", 0.0)
+                p_p = promedios_gen.get("Pases Clave", 0.0)
+                d_p = promedios_gen.get("Duelos Ganados", 0.0)
+                i_p = promedios_gen.get("Intercepciones", 0.0)
                 
                 val_radar = [
-                    min(100, int(g_p90 * 30 + t_p90 * 15 + 35)),
-                    min(100, int(a_p90 * 35 + p_p90 * 15 + 35)),
-                    min(100, int(i_p90 * 20 + d_p90 * 5 + 40)),
-                    min(100, int(d_p90 * 8 + 40)),
-                    min(100, int(p_p90 * 15 + 45))
+                    min(100, int(g_p * 30 + t_p * 15 + 35)),
+                    min(100, int(a_p * 35 + p_p * 15 + 35)),
+                    min(100, int(i_p * 20 + d_p * 5 + 40)),
+                    min(100, int(d_p * 8 + 40)),
+                    min(100, int(p_p * 15 + 45))
                 ]
                 
             with c_rad:
-                st.caption(f"Acumulado: **{tot_partidos} partidos** | **{tot_min} minutos jugados**")
+                st.caption(f"Acumulado Real: **{tot_p} partidos registrados** | **{tot_m} min**")
                 angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]
                 valores_plot = val_radar + val_radar[:1]
                 fig, ax = plt.subplots(figsize=(2.2, 2.2), subplot_kw=dict(polar=True))
@@ -261,23 +303,16 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 st.pyplot(fig, use_container_width=True)
                 
             with c_mat:
-                st.markdown("#### Matriz Quirúrgica Acumulada p/90")
+                st.markdown(f"#### Matriz Quirúrgica p/90 (Basada en {tot_p} partidos cargados)")
                 metricas_q = obtener_30_metricas(jugador['Posición'])
                 m_tabs = st.tabs(list(metricas_q.keys()))
                 for i, (pilar, lista_m) in enumerate(metricas_q.items()):
                     with m_tabs[i]:
                         cols = st.columns(4)
                         for j, metrica in enumerate(lista_m):
-                            val_str = "0.0 p/90"
-                            if tot_min > 0:
-                                if "Goles" in metrica: val_str = f"{(df_partidos['goles'].sum()/tot_min)*90:.2f} p/90"
-                                elif "Asistencias" in metrica: val_str = f"{(df_partidos['asistencias'].sum()/tot_min)*90:.2f} p/90"
-                                elif "Tiros" in metrica: val_str = f"{(df_partidos['tiros'].sum()/tot_min)*90:.2f} p/90"
-                                elif "Pases" in metrica: val_str = f"{(df_partidos['pases_clave'].sum()/tot_min)*90:.2f} p/90"
-                                elif "Duelos" in metrica: val_str = f"{(df_partidos['duelos_ganados'].sum()/tot_min)*90:.2f} p/90"
-                                elif "Intercepciones" in metrica: val_str = f"{(df_partidos['intercepciones'].sum()/tot_min)*90:.2f} p/90"
-                                else: val_str = "Acumulado"
-                            cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_str}</span></div>", unsafe_allow_html=True)
+                            val_calculado = promedios_gen.get(metrica, 0.0)
+                            unit = "%" if "%" in metrica else "p/90"
+                            cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado} {unit}</span></div>", unsafe_allow_html=True)
 
         # Sub-vista 2: Promedio por Torneo
         with sub_vistas[1]:
@@ -286,21 +321,20 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 torneo_sel = st.selectbox("Seleccionar Torneo para Evaluar:", torneos_disponibles, key=f"torneo_sel_{jugador['ID']}")
                 
                 df_torneo = df_partidos[df_partidos['liga'] == torneo_sel]
-                min_torneo = df_torneo['minutos'].sum()
-                part_torneo = len(df_torneo)
+                promedios_torneo, part_torneo, min_torneo = calcular_promedios_df(df_torneo)
                 
-                st.info(f"Rendimiento en **{torneo_sel}**: **{part_torneo} partidos** | **{min_torneo} minutos totales**")
+                st.info(f"Rendimiento en **{torneo_sel}**: **{part_torneo} partidos registrados** | **{min_torneo} minutos**")
                 
                 c_rad_t, c_mat_t = st.columns([1.2, 2.8])
                 with c_rad_t:
                     val_t = [65, 70, 60, 75, 68]
                     if min_torneo > 0:
                         val_t = [
-                            min(100, int((df_torneo['goles'].sum()/min_torneo)*90 * 30 + 35)),
-                            min(100, int((df_torneo['asistencias'].sum()/min_torneo)*90 * 35 + 35)),
-                            min(100, int((df_torneo['intercepciones'].sum()/min_torneo)*90 * 20 + 40)),
-                            min(100, int((df_torneo['duelos_ganados'].sum()/min_torneo)*90 * 8 + 40)),
-                            min(100, int((df_torneo['pases_clave'].sum()/min_torneo)*90 * 15 + 45))
+                            min(100, int(promedios_torneo.get("Goles Totales", 0.0) * 30 + 35)),
+                            min(100, int(promedios_torneo.get("Asistencias Directas", 0.0) * 35 + 35)),
+                            min(100, int(promedios_torneo.get("Intercepciones", 0.0) * 20 + 40)),
+                            min(100, int(promedios_torneo.get("Duelos Ganados", 0.0) * 8 + 40)),
+                            min(100, int(promedios_torneo.get("Pases Clave", 0.0) * 15 + 45))
                         ]
                     angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]
                     valores_plot_t = val_t + val_t[:1]
@@ -319,15 +353,9 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                         with m_tabs_t[i]:
                             cols = st.columns(4)
                             for j, metrica in enumerate(lista_m):
-                                val_str = "0.0 p/90"
-                                if min_torneo > 0:
-                                    if "Goles" in metrica: val_str = f"{(df_torneo['goles'].sum()/min_torneo)*90:.2f} p/90"
-                                    elif "Asistencias" in metrica: val_str = f"{(df_torneo['asistencias'].sum()/min_torneo)*90:.2f} p/90"
-                                    elif "Tiros" in metrica: val_str = f"{(df_torneo['tiros'].sum()/min_torneo)*90:.2f} p/90"
-                                    elif "Pases" in metrica: val_str = f"{(df_torneo['pases_clave'].sum()/min_torneo)*90:.2f} p/90"
-                                    elif "Duelos" in metrica: val_str = f"{(df_torneo['duelos_ganados'].sum()/min_torneo)*90:.2f} p/90"
-                                    else: val_str = "Promedio Torneo"
-                                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_str}</span></div>", unsafe_allow_html=True)
+                                val_calc_t = promedios_torneo.get(metrica, 0.0)
+                                unit_t = "%" if "%" in metrica else "p/90"
+                                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calc_t} {unit_t}</span></div>", unsafe_allow_html=True)
             else:
                 st.info("No hay partidos registrados para filtrar por competición. Registra partidos en 'Ingreso de Data'.")
 
@@ -390,7 +418,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         cm2.metric("Semáforo de Viabilidad", via_m_clean)
         cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN CON ÍNDICES DEFENSIVOS
+    # MÓDULO DE EDICIÓN
     with st.expander(f"Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
@@ -616,7 +644,6 @@ else:
     elif opcion == "Ingreso de Data (Partidos)":
         st.title("Registro Manual de Estadísticas de Partido")
         
-        # PESTAÑAS: CREAR PARTIDO Y EDITAR PARTIDO EXISTENTE
         tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir Partido Cargado"])
         
         todos_jugadores = []
@@ -626,9 +653,7 @@ else:
             todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
         todos_jugadores = list(set(todos_jugadores))
         
-        # ---------------------------------------------------------
         # PESTAÑA A: CAPTURAR NUEVO PARTIDO
-        # ---------------------------------------------------------
         with tab_captura:
             c1, c2 = st.columns(2)
             if todos_jugadores:
@@ -697,9 +722,7 @@ else:
                         except Exception as e:
                             st.error(f"Error al escribir en Supabase: {e}")
 
-        # ---------------------------------------------------------
         # PESTAÑA B: EDITAR / CORREGIR PARTIDO CARGADO
-        # ---------------------------------------------------------
         with tab_edicion:
             st.markdown("#### Corrección Quirúrgica de Partido Cargado")
             
@@ -717,7 +740,6 @@ else:
                     
                     st.info(f"Editando: **{p_curr['jornada']}** vs. **{p_curr['equipo']}** (ID de registro: #{p_curr['id']})")
                     
-                    # Formulario pre-llenado con los valores actuales del partido
                     pos_ed = p_curr['posicion']
                     metricas_pos_ed = obtener_30_metricas(pos_ed)
                     valores_corregidos = {}

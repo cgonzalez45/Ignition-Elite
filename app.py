@@ -31,7 +31,6 @@ def procesar_foto(uploaded_file):
     return None
 
 def procesar_video(uploaded_file):
-    """Procesa un clip corto de video (MP4/MOV) para almacenarlo en Base64 o URL."""
     if uploaded_file is not None:
         mime_type = uploaded_file.type if uploaded_file.type else "video/mp4"
         return f"data:{mime_type};base64," + base64.b64encode(uploaded_file.getvalue()).decode()
@@ -53,11 +52,11 @@ def enviar_codigo_2fa(destinatario, codigo):
             server.login(st.secrets["SMTP_USER"], st.secrets["SMTP_PASSWORD"])
             server.sendmail(st.secrets["SMTP_USER"], [destinatario], msg.as_string())
             server.quit()
-            return True, "Código enviado exitosamente a tu correo."
+            return True, "Código enviado a tu correo."
         except Exception as e:
-            return False, f"Error al enviar correo SMTP: {e}"
+            return False, f"Error SMTP: {e}"
     else:
-        return False, "Falta configurar SMTP_USER y SMTP_PASSWORD en Secrets de Streamlit."
+        return False, "SMTP no configurado en Secrets."
 
 # 2. CARGA DESDE SUPABASE O RESPALDO LOCAL
 def cargar_desde_supabase(tabla):
@@ -88,11 +87,10 @@ def cargar_desde_supabase(tabla):
             pass
     return []
 
-# Sincronización inicial
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS POR ROL
+# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
@@ -149,7 +147,7 @@ def obtener_30_metricas(posicion):
             "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
             "Pilar 4: Físico y Trabajo (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
         }
-    else: # Delantero Centro
+    else:
         return {
             "Pilar 1: Finalización Eficaz (8)": ["Goles Totales", "Goles Esperados (xG)", "Tiros a Puerta %", "Tiros Totales", "Conversión de Gol %", "Penales Anotados", "Tiros al Palo", "Fueras de Lugar"],
             "Pilar 2: Presencia en Área (7)": ["Toques en Área Rival", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Faltas Recibidas en Área", "Pases Recibidos en Área", "Anticipaciones Ofensivas", "Rebotes Ganados"],
@@ -226,7 +224,6 @@ def calcular_promedios_df(df_input):
         else:
             promedios[k] = round(total_val / tot_partidos, 2)
 
-    # CANDADOS LÓGICOS DE SEGURIDAD (SANITY CHECKS)
     if promedios.get("Goles Totales", 0) > promedios.get("Tiros a Puerta", 0):
         promedios["Tiros a Puerta"] = promedios["Goles Totales"]
         
@@ -235,7 +232,7 @@ def calcular_promedios_df(df_input):
         
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES E INTERNACIONALES
+# 4. LIGAS MUNDIALES
 LIGAS_MUNDIALES = [
     "Champions League", "Europa League", "Conference League", 
     "Concacaf Champions Cup", "Copa Centroamericana", "Leagues Cup", 
@@ -293,7 +290,7 @@ EQUIPOS_POR_LIGA = {
     "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
     "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
     "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgárdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
 }
 
 # 5. MOSTRAR PERFIL
@@ -444,7 +441,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
 
-                # REPRODUCTOR DE VIDEO DE LA ACCIÓN
                 video_data = m_custom.get("video_clip")
                 video_titulo = m_custom.get("video_titulo", "Clip de la Acción")
                 if video_data:
@@ -564,7 +560,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                     except Exception as e:
                         st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA GLOBAL Y BLINDAJE DE LOGIN
+# 6. ESTÉTICA GLOBAL
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -627,12 +623,7 @@ if not st.session_state['logged_in']:
                     codigo_generado = str(random.randint(100000, 999999))
                     st.session_state['otp_code'] = codigo_generado
                     st.session_state['awaiting_2fa'] = True
-                    
-                    exito, msg = enviar_codigo_2fa("christiangzze@gmail.com", codigo_generado)
-                    if exito:
-                        st.success("🔐 Código 2FA enviado a christiangzze@gmail.com")
-                    else:
-                        st.warning(f"🔐 Modo de prueba 2FA (Sin SMTP): Tu código temporal es: {codigo_generado}")
+                    enviar_codigo_2fa("christiangzze@gmail.com", codigo_generado)
                     st.rerun()
                     
                 elif u_lower == "sebastian" and password == "Inmortal1":
@@ -647,7 +638,10 @@ if not st.session_state['logged_in']:
                     st.error("Credenciales incorrectas")
         else:
             st.markdown("#### Verificación de Seguridad (2FA)")
-            st.caption("Se ha enviado un código de 6 dígitos a **christiangzze@gmail.com**")
+            st.caption("Se ha enviado un código a **christiangzze@gmail.com**")
+            
+            # CAJA VISIBLE EN PANTALLA POR SI NO TIENES SMTP CONFIGURADO O NO LLEGA EL CORREO
+            st.warning(f"🔑 Código temporal de verificación: **{st.session_state['otp_code']}**")
             
             otp_ingresado = st.text_input("Ingresa el Código 2FA", max_chars=6, key="otp_input_txt")
             st.write("")
@@ -659,10 +653,10 @@ if not st.session_state['logged_in']:
                     st.session_state['role'] = 'admin'
                     st.session_state['awaiting_2fa'] = False
                     st.session_state['otp_code'] = None
-                    st.success("Acceso Administrador Autorizado.")
+                    st.success("Acceso Autorizado.")
                     st.rerun()
                 else:
-                    st.error("Código de verificación incorrecto.")
+                    st.error("Código incorrecto.")
                     
             if col_b2.button("CANCELAR", key="btn_cancelar_2fa"):
                 st.session_state['awaiting_2fa'] = False
@@ -974,7 +968,6 @@ else:
                                     d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
                                     i_c = int(valores_corregidos.get("Intercepciones", 0))
                                     
-                                    # Mantiene el video previo si no se sobrescribe
                                     if "video_clip" in m_curr_custom:
                                         valores_corregidos["video_clip"] = m_curr_custom["video_clip"]
                                     if "video_titulo" in m_curr_custom:

@@ -108,21 +108,21 @@ def obtener_30_metricas(posicion):
             "Pilar 1: Visión y Creación (8)": ["Pases Clave", "Asistencias Esperadas (xA)", "Pases al Área Rival", "Pases Filtro Exitosos", "Asistencias Directas", "Toques en Tercio Final", "Pases Recibidos entre Líneas", "Pases Progresivos"],
             "Pilar 2: Desequilibrio (7)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Conducciones al Área", "Faltas Recibidas en Ataque", "Aceleraciones", "Pérdidas de Balón", "Fueras de Lugar"],
             "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros de Fuera del Área", "Tiros al Palo", "Conversión de Gol %"],
-            "Pilar 4: Presión y Físico (7)": ["Presión Alta Exitosa", "Recuperaciones en Campo Rival", "Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
+            "Pilar 4: Presión y Físico (7)": ["Presión Alta Exitosa", "Recuperaciones en Campo Rival", "Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
         }
     elif posicion == "Extremo":
         return {
             "Pilar 1: Desequilibrio y Regate (8)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Desbordes por Banda", "Faltas Recibidas en Ataque", "Aceleraciones", "Conducciones al Área", "Pérdidas de Balón", "Fueras de Lugar"],
             "Pilar 2: Creación y Centros (7)": ["Centros Precisos %", "Pases Clave", "Asistencias Esperadas (xA)", "Asistencias Directas", "Pases al Área Rival", "Toques Totales", "Pases Progresivos Recibidos"],
             "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
-            "Pilar 4: Físico y Trabajo (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida"]
+            "Pilar 4: Físico y Trabajo (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
         }
     else: # Delantero Centro
         return {
             "Pilar 1: Finalización Eficaz (8)": ["Goles Totales", "Goles Esperados (xG)", "Tiros a Puerta %", "Tiros Totales", "Conversión de Gol %", "Penales Anotados", "Tiros al Palo", "Fueras de Lugar"],
             "Pilar 2: Presencia en Área (7)": ["Toques en Área Rival", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Faltas Recibidas en Área", "Pases Recibidos en Área", "Anticipaciones Ofensivas", "Rebotes Ganados"],
             "Pilar 3: Asociación y Apoyos (8)": ["Asistencias Directas", "Asistencias Esperadas (xA)", "Pases Clave", "Regates Exitosos", "Duelos Ofensivos Ganados", "Pases Precisos %", "Pérdidas de Balón", "Faltas Cometidas en Ataque"],
-            "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
+            "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
         }
 
 def obtener_ejes_radar(posicion):
@@ -186,7 +186,6 @@ def calcular_promedios_df(df_input):
 
 # 4. LIGAS MUNDIALES E INTERNACIONALES COMPLETAS
 LIGAS_MUNDIALES = [
-    # TORNEOS INTERNACIONALES UEFA, CONCACAF, CONMEBOL
     "Previa UCL", 
     "Previa UEL", 
     "Previa UECL", 
@@ -200,7 +199,6 @@ LIGAS_MUNDIALES = [
     "Copa Sudamericana",
     "Copa Doméstica / Otra Competencia (Escribir)",
     
-    # LIGAS DOMÉSTICAS
     "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
     "Premier League", "Championship", "League One", "League Two",
@@ -213,6 +211,16 @@ LIGAS_MUNDIALES = [
     "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
     "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
     "MLS", "MLS Next Pro", "USL", "J-League"
+]
+
+# LISTA COMPLETA DE JORNADAS Y LAS 4 ETAPAS PREVIAS (IDA Y VUELTA)
+JORNADAS_OPCIONES = [f"Jornada {i}" for i in range(1, 39)] + [
+    "Fase de Grupos", 
+    "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
+    "2da Ronda Previa — Ida", "2da Ronda Previa — Vuelta",
+    "3ra Ronda Previa — Ida", "3ra Ronda Previa — Vuelta",
+    "Playoffs Previa — Ida", "Playoffs Previa — Vuelta",
+    "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"
 ]
 
 equipos_mx_2026 = [
@@ -411,7 +419,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             else:
                 st.info("No hay fichas de partidos individuales cargadas para este jugador.")
 
-    # TAB 3: MERCADO & VIABILIDAD (SOLO SCOUTING_DB)
+    # TAB 3: MERCADO & VIABILIDAD
     if tabla_origen == 'scouting_db':
         with pestanas_principales[2]:
             st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
@@ -431,7 +439,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             cm2.metric("Semáforo de Viabilidad", via_m_clean)
             cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN CON SOPORTE PARA COPAS Y COMPETENCIAS FLEXIBLES
+    # MÓDULO DE EDICIÓN
     with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
@@ -699,7 +707,7 @@ else:
             todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
         todos_jugadores = list(set(todos_jugadores))
         
-        # PESTAÑA A: CAPTURAR NUEVO PARTIDO CON LIGAS E INTERNACIONALES FLEXIBLES
+        # PESTAÑA A: CAPTURAR NUEVO PARTIDO CON ETAPAS DE IDA Y VUELTA
         with tab_captura:
             c1, c2 = st.columns(2)
             if todos_jugadores:
@@ -720,8 +728,7 @@ else:
             else:
                 n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
                 
-            jornadas_disponibles = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "2da Ronda Previa", "3ra Ronda Previa", "Playoffs Previa", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
-            n_jornada = c1.selectbox("Jornada / Fase", jornadas_disponibles, key="p_jornada_input")
+            n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
             v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
             st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
@@ -736,7 +743,7 @@ else:
                         for j, metrica in enumerate(lista_m):
                             if "xG Evitados" in metrica or "Diferencia" in metrica:
                                 val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
-                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
                                 val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
                             else:
                                 val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
@@ -796,9 +803,8 @@ else:
                     metricas_pos_ed = obtener_30_metricas(pos_ed)
                     valores_corregidos = {}
                     
-                    jornadas_opciones = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "2da Ronda Previa", "3ra Ronda Previa", "Playoffs Previa", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
-                    j_curr_val = p_curr.get('jornada', 'Jornada 1')
-                    j_idx = jornadas_opciones.index(j_curr_val) if j_curr_val in jornadas_opciones else 0
+                    j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
+                    j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
                     
                     l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
                     l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
@@ -807,7 +813,7 @@ else:
                         st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
                         med_c1, med_c2 = st.columns(2)
                         
-                        ed_jornada = med_c1.selectbox("Jornada / Fase", jornadas_opciones, index=j_idx, key="ed_jornada_k")
+                        ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key="ed_jornada_k")
                         ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
                         
                         if "Copa Doméstica" in ed_liga_sel:
@@ -834,7 +840,7 @@ else:
                                     val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
                                     if "xG Evitados" in metrica or "Diferencia" in metrica:
                                         val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}")
-                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
                                         val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}")
                                     else:
                                         val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}")

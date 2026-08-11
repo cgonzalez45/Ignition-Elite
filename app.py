@@ -562,44 +562,86 @@ st.markdown("""
         object-position: center;
     }
     
-    .login-container { max-width: 440px; margin: 40px auto; padding: 30px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
     .metric-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-left: 4px solid #1A2B4C; padding: 12px; border-radius: 6px; margin-bottom: 10px; color: #1A2B4C; font-size: 13px; }
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; }
     .stButton>button:hover { background-color: #1A2B4C !important; color: #FFFFFF !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (SEGURIDAD Y ROLES)
+# 7. SESIÓN Y NAVEGACIÓN (FONDO COMPLETO FULL-SCREEN Y ROLES)
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
 
 if not st.session_state['logged_in']:
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("<div class='login-container'>", unsafe_allow_html=True)
+    
+    # 📸 CONVERSIÓN DE IMAGEN A CSS PARA FONDO COMPLETO
+    bg_image_path = None
+    for img_name in ["image_8fb87b.jpeg", "image_8fb87b.jpg", "image_8fb87b.png", "login_hero.jpeg", "login_hero.jpg", "login_hero.png"]:
+        if os.path.exists(img_name):
+            bg_image_path = img_name
+            break
+            
+    if bg_image_path:
+        with open(bg_image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        mime_type = "image/jpeg" if "jpg" in bg_image_path or "jpeg" in bg_image_path else "image/png"
         
-        # 📸 BÚSQUEDA EXCLUSIVA DE IMAGEN CON SOPORTE JPEG
-        if os.path.exists("image_8fb87b.jpeg"): st.image("image_8fb87b.jpeg", use_container_width=True)
-        elif os.path.exists("image_8fb87b.jpg"): st.image("image_8fb87b.jpg", use_container_width=True)
-        elif os.path.exists("image_8fb87b.png"): st.image("image_8fb87b.png", use_container_width=True)
-        elif os.path.exists("login_hero.jpeg"): st.image("login_hero.jpeg", use_container_width=True)
-        elif os.path.exists("login_hero.jpg"): st.image("login_hero.jpg", use_container_width=True)
-        elif os.path.exists("login_hero.png"): st.image("login_hero.png", use_container_width=True)
-        elif os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-        elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
-        else:
-            st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
-        
+        st.markdown(f"""
+        <style>
+        /* Fondo de pantalla completa */
+        .stApp {{
+            background-image: url("data:{mime_type};base64,{encoded_string}") !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+        }}
+        /* Hacer invisible la cabecera vacía de Streamlit */
+        [data-testid="stHeader"] {{
+            background-color: transparent !important;
+        }}
+        /* Tarjeta de login esmerilada (Glassmorphism) */
+        [data-testid="column"]:nth-of-type(2) {{
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            border-radius: 16px !important;
+            padding: 40px !important;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+            border-top: 6px solid #C8A165 !important;
+            margin-top: 15vh !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback por si la imagen no se encuentra
         st.markdown("""
-            <h2 style='color:#1A2B4C; margin-top:15px; margin-bottom:0; font-size:22px; text-align:center;'>SCOUTING PRO</h2>
-            <p style='color:#C8A165; font-size:12px; font-weight:bold; letter-spacing:1px; margin-top:4px; text-align:center;'>SCOUTING INTERNACIONAL Y DIRECCIÓN DEPORTIVA</p>
-            <hr style='border-color:#E2E8F0; margin: 20px 0;'>
+        <style>
+        [data-testid="column"]:nth-of-type(2) {
+            background: #FFFFFF !important;
+            border-radius: 16px !important;
+            padding: 40px !important;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2) !important;
+            border-top: 6px solid #C8A165 !important;
+            margin-top: 15vh !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 1.5, 1])
+    with col2:
+        # Textos flotando sobre la caja
+        st.markdown("""
+            <h1 style='color:#1A2B4C; margin:0; font-size:38px; text-align:center; font-weight:900;'>IGNITION</h1>
+            <h2 style='color:#1A2B4C; margin:0; font-size:20px; text-align:center;'>SCOUTING PRO</h2>
+            <p style='color:#C8A165; font-size:12px; font-weight:bold; letter-spacing:1px; margin-top:5px; text-align:center;'>DIRECCIÓN DEPORTIVA E INTELIGENCIA TÁCTICA</p>
+            <hr style='border-color:#1A2B4C; opacity:0.1; margin: 25px 0;'>
         """, unsafe_allow_html=True)
         
         usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
         password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
         st.write("")
+        
         if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
             u_lower = usuario.lower()
             if u_lower == "christian" and password == "Saopaulo45":
@@ -616,7 +658,6 @@ if not st.session_state['logged_in']:
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
-        st.markdown("</div>", unsafe_allow_html=True)
 
 else:
     with st.sidebar:

@@ -184,9 +184,9 @@ def calcular_promedios_df(df_input):
             
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES
+# 4. LIGAS MUNDIALES (CON LEAGUES CUP)
 LIGAS_MUNDIALES = [
-    "Liga MX", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
+    "Liga MX", "Leagues Cup", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
     "Premier League", "Championship", "League One", "League Two",
     "Ligue 1", "Ligue 2", "Serie A", "Serie B",
@@ -207,8 +207,14 @@ equipos_mx_2026 = [
     "Tigres UANL", "Club Tijuana", "Deportivo Toluca"
 ]
 
+equipos_mls_2026 = [
+    "Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"
+]
+
 EQUIPOS_POR_LIGA = {
     "Liga MX": equipos_mx_2026,
+    "MLS": equipos_mls_2026,
+    "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026), # COMBINADO LIGA MX Y MLS
     "Liga de Expansión MX": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tlaxcala FC", "Venados FC", "CD Tapatío"],
     "Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
     "Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
@@ -217,8 +223,7 @@ EQUIPOS_POR_LIGA = {
     "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
     "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
     "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
-    "Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"],
-    "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
+    "Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"]
 }
 
 # 5. MOSTRAR PERFIL
@@ -663,7 +668,8 @@ else:
             else:
                 n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
                 
-            n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
+            jornadas_disponibles = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
+            n_jornada = c1.selectbox("Jornada / Fase", jornadas_disponibles, key="p_jornada_input")
             v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
             st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
@@ -716,7 +722,7 @@ else:
                         except Exception as e:
                             st.error(f"Error al escribir en Supabase: {e}")
 
-        # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO (CON METADATOS EDITABLES)
+        # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
         with tab_edicion:
             st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
             
@@ -738,7 +744,6 @@ else:
                     metricas_pos_ed = obtener_30_metricas(pos_ed)
                     valores_corregidos = {}
                     
-                    # CÁLCULO DE ÍNDICES DE METADATOS PARA VALORES PREVIOS
                     jornadas_opciones = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
                     j_curr_val = p_curr.get('jornada', 'Jornada 1')
                     j_idx = jornadas_opciones.index(j_curr_val) if j_curr_val in jornadas_opciones else 0

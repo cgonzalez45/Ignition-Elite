@@ -5,9 +5,6 @@ import matplotlib.pyplot as plt
 import math
 import os
 import base64
-import random
-import smtplib
-from email.mime.text import MIMEText
 
 from supabase import create_client, Client
 
@@ -35,28 +32,6 @@ def procesar_video(uploaded_file):
         mime_type = uploaded_file.type if uploaded_file.type else "video/mp4"
         return f"data:{mime_type};base64," + base64.b64encode(uploaded_file.getvalue()).decode()
     return None
-
-def enviar_codigo_2fa(destinatario, codigo):
-    if "SMTP_USER" in st.secrets and "SMTP_PASSWORD" in st.secrets:
-        try:
-            smtp_server = st.secrets.get("SMTP_SERVER", "smtp.gmail.com")
-            smtp_port = int(st.secrets.get("SMTP_PORT", 587))
-            
-            msg = MIMEText(f"Hola Christian,\n\nTu código de verificación de seguridad (2FA) para ingresar a Ignition Elite Scouting es: {codigo}\n\nSi no intentaste iniciar sesión, ignora este mensaje.")
-            msg['Subject'] = "Código de Verificación 2FA — Ignition Elite"
-            msg['From'] = st.secrets["SMTP_USER"]
-            msg['To'] = destinatario
-
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()
-            server.login(st.secrets["SMTP_USER"], st.secrets["SMTP_PASSWORD"])
-            server.sendmail(st.secrets["SMTP_USER"], [destinatario], msg.as_string())
-            server.quit()
-            return True, "Código enviado a tu correo."
-        except Exception as e:
-            return False, f"Error SMTP: {e}"
-    else:
-        return False, "SMTP no configurado en Secrets."
 
 # 2. CARGA DESDE SUPABASE O RESPALDO LOCAL
 def cargar_desde_supabase(tabla):
@@ -90,7 +65,7 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS
+# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS POR ROL
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
@@ -290,7 +265,7 @@ EQUIPOS_POR_LIGA = {
     "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
     "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
     "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "Allsvenskan": ["AIK", "BK Häcken", "Djurgárdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
 }
 
 # 5. MOSTRAR PERFIL
@@ -582,14 +557,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN
+# 7. SESIÓN Y NAVEGACIÓN (LOGIN DIRECTO SIN 2FA)
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
-
-if 'awaiting_2fa' not in st.session_state:
-    st.session_state['awaiting_2fa'] = False
-    st.session_state['otp_code'] = None
 
 if not st.session_state['logged_in']:
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -613,55 +584,25 @@ if not st.session_state['logged_in']:
             <hr style='border-color:#E2E8F0; margin: 20px 0;'>
         """, unsafe_allow_html=True)
         
-        if not st.session_state['awaiting_2fa']:
-            usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
-            password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
-            st.write("")
-            if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
-                u_lower = usuario.lower()
-                if u_lower == "christian" and password == "Saopaulo45":
-                    codigo_generado = str(random.randint(100000, 999999))
-                    st.session_state['otp_code'] = codigo_generado
-                    st.session_state['awaiting_2fa'] = True
-                    enviar_codigo_2fa("christiangzze@gmail.com", codigo_generado)
-                    st.rerun()
-                    
-                elif u_lower == "sebastian" and password == "Inmortal1":
-                    st.session_state['logged_in'] = True
-                    st.session_state['role'] = 'viewer'
-                    st.rerun()
-                elif u_lower == "gerardo" and password == "Babui7":
-                    st.session_state['logged_in'] = True
-                    st.session_state['role'] = 'viewer'
-                    st.rerun()
-                else:
-                    st.error("Credenciales incorrectas")
-        else:
-            st.markdown("#### Verificación de Seguridad (2FA)")
-            st.caption("Se ha enviado un código a **christiangzze@gmail.com**")
-            
-            # CAJA VISIBLE EN PANTALLA POR SI NO TIENES SMTP CONFIGURADO O NO LLEGA EL CORREO
-            st.warning(f"🔑 Código temporal de verificación: **{st.session_state['otp_code']}**")
-            
-            otp_ingresado = st.text_input("Ingresa el Código 2FA", max_chars=6, key="otp_input_txt")
-            st.write("")
-            col_b1, col_b2 = st.columns(2)
-            
-            if col_b1.button("VERIFICAR CÓDIGO", key="btn_verificar_2fa"):
-                if otp_ingresado.strip() == st.session_state['otp_code']:
-                    st.session_state['logged_in'] = True
-                    st.session_state['role'] = 'admin'
-                    st.session_state['awaiting_2fa'] = False
-                    st.session_state['otp_code'] = None
-                    st.success("Acceso Autorizado.")
-                    st.rerun()
-                else:
-                    st.error("Código incorrecto.")
-                    
-            if col_b2.button("CANCELAR", key="btn_cancelar_2fa"):
-                st.session_state['awaiting_2fa'] = False
-                st.session_state['otp_code'] = None
+        usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
+        password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
+        st.write("")
+        if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
+            u_lower = usuario.lower()
+            if u_lower == "christian" and password == "Saopaulo45":
+                st.session_state['logged_in'] = True
+                st.session_state['role'] = 'admin'
                 st.rerun()
+            elif u_lower == "sebastian" and password == "Inmortal1":
+                st.session_state['logged_in'] = True
+                st.session_state['role'] = 'viewer'
+                st.rerun()
+            elif u_lower == "gerardo" and password == "Babui7":
+                st.session_state['logged_in'] = True
+                st.session_state['role'] = 'viewer'
+                st.rerun()
+            else:
+                st.error("Credenciales incorrectas")
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -688,8 +629,6 @@ else:
         if st.button("Cerrar Sesión"):
             st.session_state['logged_in'] = False
             st.session_state['role'] = 'viewer'
-            st.session_state['awaiting_2fa'] = False
-            st.session_state['otp_code'] = None
             st.rerun()
 
     if opcion == "Dashboard General (Scouting)":
@@ -810,6 +749,7 @@ else:
                 todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
             todos_jugadores = list(set(todos_jugadores))
             
+            # PESTAÑA A: CAPTURAR NUEVO PARTIDO
             with tab_captura:
                 c1, c2 = st.columns(2)
                 if todos_jugadores:
@@ -891,8 +831,9 @@ else:
                             except Exception as e:
                                 st.error(f"Error al escribir en Supabase: {e}")
 
+            # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
             with tab_edicion:
-                st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
+                st.markdown("#### Corrección de Metadatos, Métricas y Videos de Partido Cargado")
                 
                 if todos_jugadores:
                     j_ed_sel = st.selectbox("Seleccionar Jugador para Administrar Partidos:", todos_jugadores, key="j_ed_sel_k")
@@ -940,7 +881,12 @@ else:
                                 
                             ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
                             
-                            st.markdown("##### 2. Corrección de Métricas Tácticas")
+                            st.markdown("##### 🎬 2. Adjuntar / Actualizar Clip de Video del Partido")
+                            v_tit_prev = m_curr_custom.get("video_titulo", "")
+                            v_tit_ed = st.text_input("Título del Video", value=v_tit_prev, key=f"ed_v_tit_{p_curr['id']}")
+                            v_arch_ed = st.file_uploader("Subir / Reemplazar Clip de Video (MP4 / MOV)", type=['mp4', 'mov'], key=f"ed_v_file_{p_curr['id']}")
+
+                            st.markdown("##### 3. Corrección de Métricas Tácticas")
                             tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
                             for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
                                 with tabs_ed[i]:
@@ -968,10 +914,16 @@ else:
                                     d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
                                     i_c = int(valores_corregidos.get("Intercepciones", 0))
                                     
-                                    if "video_clip" in m_curr_custom:
-                                        valores_corregidos["video_clip"] = m_curr_custom["video_clip"]
-                                    if "video_titulo" in m_curr_custom:
-                                        valores_corregidos["video_titulo"] = m_curr_custom["video_titulo"]
+                                    if v_arch_ed is not None:
+                                        valores_corregidos["video_clip"] = procesar_video(v_arch_ed)
+                                        valores_corregidos["video_titulo"] = v_tit_ed if v_tit_ed else "Clip de la Acción"
+                                    else:
+                                        if "video_clip" in m_curr_custom:
+                                            valores_corregidos["video_clip"] = m_curr_custom["video_clip"]
+                                        if v_tit_ed:
+                                            valores_corregidos["video_titulo"] = v_tit_ed
+                                        elif "video_titulo" in m_curr_custom:
+                                            valores_corregidos["video_titulo"] = m_curr_custom["video_titulo"]
                                     
                                     payload_update = {
                                         "jornada": ed_jornada,

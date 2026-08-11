@@ -212,7 +212,7 @@ EQUIPOS_POR_LIGA = {
     "🇦🇷 Primera División Argentina": ["Boca Juniors", "River Plate", "Racing Club", "Independiente", "San Lorenzo", "Vélez Sarsfield", "Estudiantes de La Plata", "Gimnasia La Plata", "Talleres de Córdoba", "Belgrano", "Rosario Central", "Newell's Old Boys", "Argentinos Juniors", "CA Huracán", "CA Lanús", "Godoy Cruz"]
 }
 
-# 6. MOSTRAR PERFIL DE JUGADOR CON FICHA EJECUTIVA EXTENDIDA
+# 6. MOSTRAR PERFIL DE JUGADOR CON MANEJO DE ERRORES SEGURO
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
@@ -231,7 +231,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         st.markdown(f"**Club:** {jugador['Club']} | **Liga:** {jugador.get('Liga', 'N/D')}")
         st.markdown(f"**Edad:** {jugador['Edad']}")
         
-        # DATOS MANUALES DE SCOUTING
         if 'Nacionalidad' in jugador and jugador['Nacionalidad']:
             st.markdown(f"**Nacionalidad:** {jugador['Nacionalidad']}")
         if 'Valor' in jugador and jugador['Valor']:
@@ -275,7 +274,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
         nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
         
-        # CAMPOS DE FICHA MANUAL EN EDICIÓN
         nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
         nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
         nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
@@ -295,15 +293,29 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             payload = {
                 "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
                 "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64,
-                "nacionalidad": nueva_nac, "valor": nuevo_val, "agencia": nueva_agencia, "viabilidad": nueva_viab
+                "valor": nuevo_val, "viabilidad": nueva_viab
             }
+            if nueva_nac: payload["nacionalidad"] = nueva_nac
+            if nueva_agencia: payload["agencia"] = nueva_agencia
+
             if supabase and jugador.get('ID'):
                 try:
                     supabase.table(tabla_origen).update(payload).eq('id', jugador['ID']).execute()
                     st.success("Guardado en Supabase exitoso.")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Error en Supabase: {e}")
+                    # Intento alternativo sin campos no soportados
+                    try:
+                        payload_base = {
+                            "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
+                            "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64,
+                            "valor": nuevo_val, "viabilidad": nueva_viab
+                        }
+                        supabase.table(tabla_origen).update(payload_base).eq('id', jugador['ID']).execute()
+                        st.success("Guardado en Supabase exitoso.")
+                        st.rerun()
+                    except Exception as ex:
+                        st.error(f"Error en Supabase: {ex}")
             
         if col_btn2.button("🗑️ Eliminar Perfil", key=f"dl_{jugador['ID']}"):
             if supabase and jugador.get('ID'):
@@ -423,14 +435,28 @@ else:
                     payload = {
                         "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
                         "liga": reg_liga, "club": reg_club, "foto": f_b64,
-                        "nacionalidad": reg_nac, "valor": reg_val, "agencia": reg_ag, "viabilidad": reg_viab, "overall": 70
+                        "valor": reg_val, "viabilidad": reg_viab, "overall": 70
                     }
+                    if reg_nac: payload["nacionalidad"] = reg_nac
+                    if reg_ag: payload["agencia"] = reg_ag
+
                     try:
                         supabase.table('scouting_db').insert(payload).execute()
                         st.success(f"{reg_nom} guardado en la nube.")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error en Supabase: {e}")
+                        # Intento con campos base si las columnas nuevas no están indexadas
+                        try:
+                            payload_base = {
+                                "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
+                                "liga": reg_liga, "club": reg_club, "foto": f_b64,
+                                "valor": reg_val, "viabilidad": reg_viab, "overall": 70
+                            }
+                            supabase.table('scouting_db').insert(payload_base).execute()
+                            st.success(f"{reg_nom} guardado en la nube.")
+                            st.rerun()
+                        except Exception as ex:
+                            st.error(f"Error en Supabase: {ex}")
 
         if len(st.session_state['scouting_db']) > 0:
             df_scouting = pd.DataFrame(st.session_state['scouting_db'])

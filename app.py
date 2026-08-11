@@ -56,7 +56,7 @@ def cargar_desde_supabase(tabla):
             pass
     return []
 
-# Sincronización inicial
+# Sincronización inicial de sesiones
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
@@ -135,6 +135,7 @@ def obtener_ejes_radar(posicion):
     elif posicion == "Extremo": return ['Desequilibrio', 'Centros', 'Finalización', 'Aceleración', 'Presión Alta']
     else: return ['Finalización', 'Juego Aéreo', 'Presencia Área', 'Asociación', 'Presión Alta']
 
+@st.cache_data(ttl=5)
 def consultar_partidos_jugador(nombre_jugador):
     if supabase and nombre_jugador:
         try:
@@ -182,7 +183,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO
+# 5. MOSTRAR PERFIL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -445,7 +446,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA SOBRIA Y CORPORATIVA
+# 6. ESTÉTICA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -640,7 +641,7 @@ else:
         n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
         v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
-        # FORMULARIO ADAPTATIVO CON SOPORTE DE VALORES NEGATIVOS
+        # FORMULARIO OPTIMIZADO
         st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
         metricas_pos = obtener_30_metricas(n_posicion)
         
@@ -651,7 +652,6 @@ else:
                 with tabs_p[i]:
                     cols = st.columns(4)
                     for j, metrica in enumerate(lista_m):
-                        # xG Evitados y métricas avanzadas permiten valores negativos
                         if "xG Evitados" in metrica or "Diferencia" in metrica:
                             val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
                         elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
@@ -685,8 +685,11 @@ else:
                         "m_data": valores_capturados
                     }
                     try:
+                        # Guardado rápido
                         supabase.table('partidos_stats').insert(stats_partido).execute()
-                        st.success(f"Estadísticas de {n_posicion} guardadas exitosamente para {n_jugador}.")
+                        st.cache_data.clear()
+                        st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
+                        st.rerun()
                     except Exception as e:
                         payload_base = {
                             "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
@@ -696,7 +699,9 @@ else:
                         }
                         try:
                             supabase.table('partidos_stats').insert(payload_base).execute()
-                            st.success(f"Estadísticas guardadas exitosamente para {n_jugador}.")
+                            st.cache_data.clear()
+                            st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
+                            st.rerun()
                         except Exception as ex:
                             st.error(f"Error al escribir en Supabase: {ex}")
 

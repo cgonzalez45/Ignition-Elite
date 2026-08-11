@@ -184,7 +184,7 @@ def calcular_promedios_df(df_input):
             
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES E INTERNACIONALES DEPURADAS
+# 4. LIGAS MUNDIALES E INTERNACIONALES
 LIGAS_MUNDIALES = [
     "Champions League", 
     "Europa League", 
@@ -196,21 +196,20 @@ LIGAS_MUNDIALES = [
     "Copa Sudamericana",
     "Copa Doméstica / Otra Competencia (Escribir)",
     
-    "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
+    "Liga Portugal", "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
     "Premier League", "Championship", "League One", "League Two",
     "Ligue 1", "Ligue 2", "Serie A", "Serie B",
     "Bundesliga", "2. Bundesliga", "Allsvenskan", "Eliteserien",
     "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
     "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
-    "Bundesliga Austria", "Superliga de Suiza", "Liga Portugal", "Liga 2 Portugal",
+    "Bundesliga Austria", "Superliga de Suiza", "Liga 2 Portugal",
     "Liga Eslovenia",
     "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
     "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
     "MLS", "MLS Next Pro", "USL", "J-League"
 ]
 
-# LISTA COMPLETA DE JORNADAS Y LAS 4 ETAPAS PREVIAS (IDA Y VUELTA)
 JORNADAS_OPCIONES = [f"Jornada {i}" for i in range(1, 39)] + [
     "Fase de Grupos", 
     "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
@@ -231,7 +230,16 @@ equipos_mls_2026 = [
     "Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"
 ]
 
+equipos_liga_portugal_2026_27 = [
+    "Académico de Viseu", "Casa Pia AC", "CD Nacional", "CD Santa Clara", 
+    "CF Estrela da Amadora", "CS Marítimo", "FC Alverca", "FC Arouca", 
+    "FC Famalicão", "FC Porto", "GD Estoril Praia", "Gil Vicente FC", 
+    "Moreirense FC", "Rio Ave FC", "SC Braga", "SL Benfica", 
+    "Sporting CP", "Vitória SC"
+]
+
 EQUIPOS_POR_LIGA = {
+    "Liga Portugal": equipos_liga_portugal_2026_27,
     "Liga MX": equipos_mx_2026,
     "MLS": equipos_mls_2026,
     "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026),
@@ -242,8 +250,7 @@ EQUIPOS_POR_LIGA = {
     "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
     "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
     "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
-    "Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"]
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
 }
 
 # 5. MOSTRAR PERFIL

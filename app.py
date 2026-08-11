@@ -214,7 +214,7 @@ equipos_mls_2026 = [
 EQUIPOS_POR_LIGA = {
     "Liga MX": equipos_mx_2026,
     "MLS": equipos_mls_2026,
-    "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026), # COMBINADO LIGA MX Y MLS
+    "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026),
     "Liga de Expansión MX": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tlaxcala FC", "Venados FC", "CD Tapatío"],
     "Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
     "Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
@@ -231,7 +231,8 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
     
-    pestanas_principales = st.tabs(["General & Contrato", "Rendimiento & Data", "Mercado & Viabilidad"])
+    # Pestañas adaptadas según origen
+    pestanas_principales = st.tabs(["General & Contrato", "Rendimiento & Data", "Mercado & Viabilidad"] if tabla_origen == 'scouting_db' else ["General & Contrato", "Rendimiento & Data"])
     
     df_partidos = consultar_partidos_jugador(jugador['Nombre'])
     ejes_radar = obtener_ejes_radar(jugador['Posición'])
@@ -261,14 +262,14 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             st.markdown(f"**Liga / Competición:** {jugador.get('Liga', 'N/D')}")
             ag_val = jugador.get('Agencia') or 'N/D'
             st.markdown(f"**Agencia / Representante:** {ag_val}")
-            st.markdown(f"**Estatus:** {jugador.get('Status', 'OBJETIVO')}")
+            if tabla_origen == 'equipo_ignition':
+                st.markdown(f"**Estatus:** {jugador.get('Status', 'OBJETIVO')}")
 
     # TAB 2: RENDIMIENTO & DATA
     with pestanas_principales[1]:
         st.markdown("### Centro de Análisis Estadístico")
         sub_vistas = st.tabs(["Compendio General (p/90)", "Promedio por Torneo", "Ficha de Partido Único"])
         
-        # Sub-vista 1: Compendio General
         with sub_vistas[0]:
             promedios_gen, tot_p, tot_m = calcular_promedios_df(df_partidos)
             c_rad, c_mat = st.columns([1.2, 2.8])
@@ -313,7 +314,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                             unit = "%" if "%" in metrica else "p/90"
                             cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado} {unit}</span></div>", unsafe_allow_html=True)
 
-        # Sub-vista 2: Promedio por Torneo
         with sub_vistas[1]:
             if not df_partidos.empty and 'liga' in df_partidos.columns:
                 torneos_disponibles = df_partidos['liga'].unique().tolist()
@@ -358,7 +358,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             else:
                 st.info("No hay partidos registrados para filtrar por competición. Registra partidos en 'Ingreso de Data'.")
 
-        # Sub-vista 3: Ficha de Partido Único
         with sub_vistas[2]:
             if not df_partidos.empty and 'jornada' in df_partidos.columns:
                 c_f1, c_f2 = st.columns(2)
@@ -398,27 +397,28 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             else:
                 st.info("No hay fichas de partidos individuales cargadas para este jugador.")
 
-    # TAB 3: MERCADO & VIABILIDAD
-    with pestanas_principales[2]:
-        st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
-        cm1, cm2, cm3 = st.columns(3)
-        
-        val_m = jugador.get('Valor', 'N/D')
-        via_m = str(jugador.get('Viabilidad', 'Media'))
-        
-        if "Alta" in via_m: via_m_clean = "Alta"
-        elif "Baja" in via_m: via_m_clean = "Baja"
-        else: via_m_clean = "Media"
-        
-        nac_str = str(jugador.get('Nacionalidad') or '')
-        es_nacional = "Mexicana" in nac_str or "Mexicano" in nac_str or "🇲🇽" in nac_str
-        
-        cm1.metric("Valoración Estimada de Mercado", val_m)
-        cm2.metric("Semáforo de Viabilidad", via_m_clean)
-        cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
+    # TAB 3: MERCADO & VIABILIDAD (SOLO SCOUTING_DB)
+    if tabla_origen == 'scouting_db':
+        with pestanas_principales[2]:
+            st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
+            cm1, cm2, cm3 = st.columns(3)
+            
+            val_m = jugador.get('Valor', 'N/D')
+            via_m = str(jugador.get('Viabilidad', 'Media'))
+            
+            if "Alta" in via_m: via_m_clean = "Alta"
+            elif "Baja" in via_m: via_m_clean = "Baja"
+            else: via_m_clean = "Media"
+            
+            nac_str = str(jugador.get('Nacionalidad') or '')
+            es_nacional = "Mexicana" in nac_str or "Mexicano" in nac_str or "🇲🇽" in nac_str
+            
+            cm1.metric("Valoración Estimada de Mercado", val_m)
+            cm2.metric("Semáforo de Viabilidad", via_m_clean)
+            cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN
-    with st.expander(f"Editar Perfil y Subir Foto de {jugador['Nombre']}"):
+    # MÓDULO DE EDICIÓN CON PROTECCIÓN DE ESQUEMA DE TABLAS
+    with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
         nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
@@ -427,16 +427,19 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
         
         nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
-        nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
         nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
         
-        v_raw = str(jugador.get('Viabilidad', 'Media'))
-        if "Alta" in v_raw: v_idx = 0
-        elif "Baja" in v_raw: v_idx = 2
-        else: v_idx = 1
-        
-        nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=v_idx, key=f"via_{jugador['ID']}")
-        
+        if tabla_origen == 'scouting_db':
+            nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
+            v_raw = str(jugador.get('Viabilidad', 'Media'))
+            v_idx = 0 if "Alta" in v_raw else (2 if "Baja" in v_raw else 1)
+            nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=v_idx, key=f"via_{jugador['ID']}")
+        else:
+            status_opciones = ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"]
+            st_raw = str(jugador.get('Status', 'OBJETIVO'))
+            st_idx = status_opciones.index(st_raw) if st_raw in status_opciones else 0
+            nuevo_status = c_ed2.selectbox("Estatus", status_opciones, index=st_idx, key=f"st_{jugador['ID']}")
+
         nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:
             nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
@@ -448,13 +451,24 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         col_btn1, col_btn2 = st.columns([1, 1])
         if col_btn1.button("Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
             foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
+            
             payload = {
-                "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
-                "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64,
-                "valor": nuevo_val, "viabilidad": nueva_viab
+                "nombre": nuevo_nom, 
+                "edad": nueva_edad, 
+                "posicion": nueva_pos,
+                "liga": nueva_liga, 
+                "club": nuevo_club, 
+                "foto": foto_base64
             }
             if nueva_nac: payload["nacionalidad"] = nueva_nac
             if nueva_agencia: payload["agencia"] = nueva_agencia
+
+            # CAMPOS EXCLUSIVOS SEGÚN TABLA DE DESTINO
+            if tabla_origen == 'scouting_db':
+                payload["valor"] = nuevo_val
+                payload["viabilidad"] = nueva_viab
+            else:
+                payload["status"] = nuevo_status
 
             if supabase and jugador.get('ID'):
                 try:
@@ -610,6 +624,8 @@ else:
             eq_edad = c_a.number_input("Edad", 15, 45, 20, key="eq_edad_input")
             eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="eq_pos_input")
             eq_status = c_a.selectbox("Estatus", ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"], key="eq_status_input")
+            eq_nac = c_a.text_input("Nacionalidad", key="eq_nac_input")
+            eq_ag = c_b.text_input("Agencia de Representación", key="eq_ag_input")
             
             eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="eq_liga_dyn")
             if eq_liga in EQUIPOS_POR_LIGA:
@@ -626,6 +642,9 @@ else:
                         "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
                         "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
                     }
+                    if eq_nac: payload["nacionalidad"] = eq_nac
+                    if eq_ag: payload["agencia"] = eq_ag
+
                     try:
                         supabase.table('equipo_ignition').insert(payload).execute()
                         st.success(f"{eq_nom} registrado en Supabase.")

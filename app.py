@@ -575,6 +575,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+Python
 # 7. SESIÓN Y NAVEGACIÓN (LOGIN HERO INDEPENDIENTE)
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
@@ -584,14 +585,13 @@ if not st.session_state['logged_in']:
         st.markdown("<div class='login-container'>", unsafe_allow_html=True)
         
         # 📸 BÚSQUEDA EXCLUSIVA DE IMAGEN DE PORTADA / HERO PARA LOGIN
-        if os.path.exists("login_hero.png"):
+        # Aquí añadimos el nombre exacto de tu archivo: image_8fb87b.png
+        if os.path.exists("image_8fb87b.png"):
+            st.image("image_8fb87b.png", use_container_width=True)
+        elif os.path.exists("login_hero.png"):
             st.image("login_hero.png", use_container_width=True)
-        elif os.path.exists("login_hero.jpg"):
-            st.image("login_hero.jpg", use_container_width=True)
         elif os.path.exists("logo.png"):
             st.image("logo.png", use_container_width=True)
-        elif os.path.exists("logo.jpg"):
-            st.image("logo.jpg", use_container_width=True)
         else:
             st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
         
@@ -610,6 +610,7 @@ if not st.session_state['logged_in']:
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
+        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:

@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import math
 import os
 import base64
+import random
+import smtplib
+from email.mime.text import MIMEText
 
 from supabase import create_client, Client
 
@@ -26,6 +29,35 @@ def procesar_foto(uploaded_file):
     if uploaded_file is not None:
         return "data:image/png;base64," + base64.b64encode(uploaded_file.getvalue()).decode()
     return None
+
+def procesar_video(uploaded_file):
+    """Procesa un clip corto de video (MP4/MOV) para almacenarlo en Base64 o URL."""
+    if uploaded_file is not None:
+        mime_type = uploaded_file.type if uploaded_file.type else "video/mp4"
+        return f"data:{mime_type};base64," + base64.b64encode(uploaded_file.getvalue()).decode()
+    return None
+
+def enviar_codigo_2fa(destinatario, codigo):
+    if "SMTP_USER" in st.secrets and "SMTP_PASSWORD" in st.secrets:
+        try:
+            smtp_server = st.secrets.get("SMTP_SERVER", "smtp.gmail.com")
+            smtp_port = int(st.secrets.get("SMTP_PORT", 587))
+            
+            msg = MIMEText(f"Hola Christian,\n\nTu código de verificación de seguridad (2FA) para ingresar a Ignition Elite Scouting es: {codigo}\n\nSi no intentaste iniciar sesión, ignora este mensaje.")
+            msg['Subject'] = "Código de Verificación 2FA — Ignition Elite"
+            msg['From'] = st.secrets["SMTP_USER"]
+            msg['To'] = destinatario
+
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(st.secrets["SMTP_USER"], st.secrets["SMTP_PASSWORD"])
+            server.sendmail(st.secrets["SMTP_USER"], [destinatario], msg.as_string())
+            server.quit()
+            return True, "Código enviado exitosamente a tu correo."
+        except Exception as e:
+            return False, f"Error al enviar correo SMTP: {e}"
+    else:
+        return False, "Falta configurar SMTP_USER y SMTP_PASSWORD en Secrets de Streamlit."
 
 # 2. CARGA DESDE SUPABASE O RESPALDO LOCAL
 def cargar_desde_supabase(tabla):
@@ -166,6 +198,7 @@ def calcular_promedios_df(df_input):
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
         for k, v in m_custom.items():
+            if k in ["video_clip", "video_titulo"]: continue
             try:
                 val_f = float(v)
                 sumas[k] = sumas.get(k, 0.0) + val_f
@@ -411,6 +444,13 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
 
+                # REPRODUCTOR DE VIDEO DE LA ACCIÓN
+                video_data = m_custom.get("video_clip")
+                video_titulo = m_custom.get("video_titulo", "Clip de la Acción")
+                if video_data:
+                    with st.expander(f"🎬 VER VIDEO: {video_titulo}", expanded=True):
+                        st.video(video_data)
+
                 st.markdown("#### Matriz de Acciones Reales del Partido (Conteos Absolutos)")
                 metricas_q = obtener_30_metricas(jugador['Posición'])
                 m_tabs_p = st.tabs(list(metricas_q.keys()))
@@ -524,12 +564,11 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                     except Exception as e:
                         st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA GLOBAL Y BLINDAJE DE LOGIN SIMPLE
+# 6. ESTÉTICA GLOBAL Y BLINDAJE DE LOGIN
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     
-    /* Ocultar la cabecera vacía de Streamlit para eliminar el margen superior */
     [data-testid="stHeader"] { display: none !important; }
     .block-container { padding-top: 3rem !important; }
     
@@ -543,22 +582,24 @@ st.markdown("""
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; padding: 10px !important; }
     .stButton>button:hover { background-color: #1A2B4C !important; color: #FFFFFF !important; }
     
-    /* Formato original del recuadro simple para Inicio de Sesión */
     .login-container { max-width: 440px; margin: 40px auto; padding: 40px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (FORMATO ORIGINAL DE CAJA BLANCA CON ROLES)
+# 7. SESIÓN Y NAVEGACIÓN
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
+
+if 'awaiting_2fa' not in st.session_state:
+    st.session_state['awaiting_2fa'] = False
+    st.session_state['otp_code'] = None
 
 if not st.session_state['logged_in']:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<div class='login-container'>", unsafe_allow_html=True)
         
-        # Imagen colocada DENTRO del recuadro blanco superior
         if os.path.exists("image_8fb87b.jpeg"): st.image("image_8fb87b.jpeg", use_container_width=True)
         elif os.path.exists("image_8fb87b.jpg"): st.image("image_8fb87b.jpg", use_container_width=True)
         elif os.path.exists("image_8fb87b.png"): st.image("image_8fb87b.png", use_container_width=True)
@@ -576,25 +617,58 @@ if not st.session_state['logged_in']:
             <hr style='border-color:#E2E8F0; margin: 20px 0;'>
         """, unsafe_allow_html=True)
         
-        usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
-        password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
-        st.write("")
-        if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
-            u_lower = usuario.lower()
-            if u_lower == "christian" and password == "Saopaulo45":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'admin'
+        if not st.session_state['awaiting_2fa']:
+            usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
+            password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
+            st.write("")
+            if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
+                u_lower = usuario.lower()
+                if u_lower == "christian" and password == "Saopaulo45":
+                    codigo_generado = str(random.randint(100000, 999999))
+                    st.session_state['otp_code'] = codigo_generado
+                    st.session_state['awaiting_2fa'] = True
+                    
+                    exito, msg = enviar_codigo_2fa("christiangzze@gmail.com", codigo_generado)
+                    if exito:
+                        st.success("🔐 Código 2FA enviado a christiangzze@gmail.com")
+                    else:
+                        st.warning(f"🔐 Modo de prueba 2FA (Sin SMTP): Tu código temporal es: {codigo_generado}")
+                    st.rerun()
+                    
+                elif u_lower == "sebastian" and password == "Inmortal1":
+                    st.session_state['logged_in'] = True
+                    st.session_state['role'] = 'viewer'
+                    st.rerun()
+                elif u_lower == "gerardo" and password == "Babui7":
+                    st.session_state['logged_in'] = True
+                    st.session_state['role'] = 'viewer'
+                    st.rerun()
+                else:
+                    st.error("Credenciales incorrectas")
+        else:
+            st.markdown("#### Verificación de Seguridad (2FA)")
+            st.caption("Se ha enviado un código de 6 dígitos a **christiangzze@gmail.com**")
+            
+            otp_ingresado = st.text_input("Ingresa el Código 2FA", max_chars=6, key="otp_input_txt")
+            st.write("")
+            col_b1, col_b2 = st.columns(2)
+            
+            if col_b1.button("VERIFICAR CÓDIGO", key="btn_verificar_2fa"):
+                if otp_ingresado.strip() == st.session_state['otp_code']:
+                    st.session_state['logged_in'] = True
+                    st.session_state['role'] = 'admin'
+                    st.session_state['awaiting_2fa'] = False
+                    st.session_state['otp_code'] = None
+                    st.success("Acceso Administrador Autorizado.")
+                    st.rerun()
+                else:
+                    st.error("Código de verificación incorrecto.")
+                    
+            if col_b2.button("CANCELAR", key="btn_cancelar_2fa"):
+                st.session_state['awaiting_2fa'] = False
+                st.session_state['otp_code'] = None
                 st.rerun()
-            elif u_lower == "sebastian" and password == "Inmortal1":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'viewer'
-                st.rerun()
-            elif u_lower == "gerardo" and password == "Babui7":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'viewer'
-                st.rerun()
-            else:
-                st.error("Credenciales incorrectas")
+                
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:
@@ -605,7 +679,6 @@ else:
         
         st.write("---")
         
-        # MENÚ DINÁMICO SEGÚN ROL DE USUARIO
         menu_items = [
             "Dashboard General (Scouting)", 
             "Equipo Ignition", 
@@ -621,12 +694,13 @@ else:
         if st.button("Cerrar Sesión"):
             st.session_state['logged_in'] = False
             st.session_state['role'] = 'viewer'
+            st.session_state['awaiting_2fa'] = False
+            st.session_state['otp_code'] = None
             st.rerun()
 
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        # CREACIÓN PROTEGIDA (SOLO ADMIN)
         if st.session_state.get('role') == 'admin':
             with st.expander("Crear Nuevo Jugador a Scoutear"):
                 c_a, c_b = st.columns(2)
@@ -680,7 +754,6 @@ else:
     elif opcion == "Equipo Ignition":
         st.title("Equipo Ignition")
         
-        # AÑADIR A EQUIPO PROTEGIDO (SOLO ADMIN)
         if st.session_state.get('role') == 'admin':
             with st.expander("Añadir Jugador a Equipo Ignition"):
                 c_a, c_b = st.columns(2)
@@ -766,6 +839,10 @@ else:
                 n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
                 v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
+                st.markdown("##### 🎬 Adjuntar Clip de Video del Partido (Opcional)")
+                v_titulo = st.text_input("Título del Video (ej. Gol de Cabeza al '84)", key="p_v_tit")
+                v_archivo = st.file_uploader("Subir Archivo de Video (MP4 / MOV)", type=['mp4', 'mov'], key="p_v_file")
+
                 st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
                 metricas_pos = obtener_30_metricas(n_posicion)
                 
@@ -792,6 +869,10 @@ else:
                             pases_cap = int(valores_capturados.get("Pases Clave", 0))
                             duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
                             inter_cap = int(valores_capturados.get("Intercepciones", 0))
+                            
+                            if v_archivo is not None:
+                                valores_capturados["video_clip"] = procesar_video(v_archivo)
+                                valores_capturados["video_titulo"] = v_titulo if v_titulo else "Clip de la Acción"
                             
                             stats_partido = {
                                 "jugador": n_jugador,
@@ -892,6 +973,12 @@ else:
                                     p_c = int(valores_corregidos.get("Pases Clave", 0))
                                     d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
                                     i_c = int(valores_corregidos.get("Intercepciones", 0))
+                                    
+                                    # Mantiene el video previo si no se sobrescribe
+                                    if "video_clip" in m_curr_custom:
+                                        valores_corregidos["video_clip"] = m_curr_custom["video_clip"]
+                                    if "video_titulo" in m_curr_custom:
+                                        valores_corregidos["video_titulo"] = m_curr_custom["video_titulo"]
                                     
                                     payload_update = {
                                         "jornada": ed_jornada,

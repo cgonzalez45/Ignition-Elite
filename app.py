@@ -57,7 +57,7 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. LISTA RIGUROSA DE POSICIONES Y SUS 30 MÉTRICAS CADA UNA
+# 3. LISTA RIGUROSA DE POSICIONES
 LISTA_POSICIONES = [
     "Portero", 
     "Defensa Central", 
@@ -128,7 +128,7 @@ def obtener_30_metricas(posicion):
             "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints p/90", "Distancia Recorrida (km)", "Velocidad Máxima", "Tarjetas Amarillas"]
         }
 
-# 4. CONFIGURADOR DEL RADAR DINÁMICO POR POSICIÓN Y CÁLCULO P/90
+# 4. CONFIGURADOR DEL RADAR DINÁMICO
 def obtener_ejes_radar(posicion):
     if posicion == "Portero":
         return ['Reflejos', 'Salidas Aéreas', 'Distribución', '1v1 Ganados', 'Juego de Pies']
@@ -173,7 +173,7 @@ def calcular_valores_radar(nombre_jugador, posicion):
             pass
     return ejes, [70, 75, 65, 80, 72]
 
-# 5. LIGAS MUNDIALES Y EQUIPOS 2026/2027 (TRANSFERMARKT)
+# 5. DICCIONARIO COMPLETO DE LIGAS Y EQUIPOS 2026/2027 (CON REACTIVIDAD EN TIEMPO REAL)
 LIGAS_MUNDIALES = [
     "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
     "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
@@ -182,7 +182,7 @@ LIGAS_MUNDIALES = [
     "🇩🇪 Bundesliga", "🇩🇪 2. Bundesliga", "🇸🇪 Allsvenskan", "🇳🇴 Eliteserien",
     "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
     "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
-    "🇦🇹 Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
+    "🇦TV Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
     "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
     "🇦🇷 Primera División Argentina", "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
     "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile", 
@@ -203,17 +203,20 @@ EQUIPOS_POR_LIGA = {
     "🇲🇽 Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
     "🇲🇽 Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
     "🇪🇸 La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"]
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
+    "🇸🇪 Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
+    "🇵🇹 Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"],
+    "🇺🇸 MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"],
+    "🇦🇷 Primera División Argentina": ["Boca Juniors", "River Plate", "Racing Club", "Independiente", "San Lorenzo", "Vélez Sarsfield", "Estudiantes de La Plata", "Gimnasia La Plata", "Talleres de Córdoba", "Belgrano", "Rosario Central", "Newell's Old Boys", "Argentinos Juniors", "CA Huracán", "CA Lanús", "Godoy Cruz"]
 }
 
-# 6. MOSTRAR PERFIL DE JUGADOR CON ADAPTACIÓN COMPLETA DE IMAGEN Y RADAR
+# 6. MOSTRAR PERFIL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
     
     col_img, col_info, col_radar = st.columns([1, 2, 2])
     with col_img:
-        # FOTOGRAFÍA ADAPTADA AL MARCO (OBJECT-FIT: CONTAIN)
         foto_src = jugador.get('Foto') if jugador.get('Foto') else "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
         st.markdown(f"""
             <div class="player-photo-card">
@@ -228,7 +231,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
-        # RADAR ADAPTATIVO A LA POSICIÓN Y ESTADÍSTICAS REALES
         ejes_dinamicos, valores_dinamicos = calcular_valores_radar(jugador['Nombre'], jugador['Posición'])
         angulos = [n / 5 * 2 * math.pi for n in range(5)]
         angulos += angulos[:1]
@@ -243,7 +245,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         ax.set_yticklabels([])
         st.pyplot(fig, use_container_width=True)
 
-    # MATRIZ DE 30 MÉTRICAS EXACTAS SEGÚN LA POSICIÓN
     st.markdown(f"### Matriz Quirúrgica p/90 ({jugador['Posición']})")
     metricas_q = obtener_30_metricas(jugador['Posición'])
     tabs = st.tabs(list(metricas_q.keys()))
@@ -261,11 +262,12 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
         nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
         
-        nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_{jugador['ID']}")
+        # SELECTOR DINÁMICO EN EDICIÓN
+        nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:
-            nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_{jugador['ID']}")
+            nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
         else:
-            nuevo_club = c_ed2.text_input("Club (Escribir nombre)", value=jugador['Club'], key=f"cl_txt_{jugador['ID']}")
+            nuevo_club = c_ed2.text_input("Club (Escribir nombre)", value=jugador['Club'], key=f"cl_txt_edit_{jugador['ID']}")
             
         nueva_foto = st.file_uploader("Subir Foto de Perfil (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
         
@@ -293,14 +295,13 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 7. ESTÉTICA ELEGANTE Y FORMATO DE ENCUADRE DE FOTOGRAFÍAS (CONTAIN)
+# 7. ESTÉTICA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
     
-    /* MARCO DE ENCUADRE ADAPTATIVO SIN RECORTE BRUSCO */
     .player-photo-card {
         width: 150px;
         height: 180px;
@@ -379,32 +380,34 @@ else:
         st.title("Inteligencia de Mercado y Seguimiento")
         
         with st.expander("➕ Crear Nuevo Jugador en Base de Datos"):
-            with st.form("form_nuevo_scouting"):
-                c_a, c_b = st.columns(2)
-                reg_nom = c_a.text_input("Nombre Completo")
-                reg_edad = c_a.number_input("Edad", 15, 45, 20)
-                reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES)
-                reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
-                if reg_liga in EQUIPOS_POR_LIGA:
-                    reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga])
-                else:
-                    reg_club = c_b.text_input("Club (Escribir)")
-                reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'])
+            # SELECTOR DE LIGA Y EQUIPO REACTIVO FUERA DEL FORM
+            c_a, c_b = st.columns(2)
+            reg_nom = c_a.text_input("Nombre Completo", key="reg_nom_input")
+            reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
+            reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
+            
+            reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="reg_liga_dyn")
+            if reg_liga in EQUIPOS_POR_LIGA:
+                reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga], key="reg_club_dyn")
+            else:
+                reg_club = c_b.text_input("Club (Escribir)", key="reg_club_txt_dyn")
                 
-                if st.form_submit_button("Guardar Jugador en Nube"):
-                    if reg_nom and supabase:
-                        f_b64 = procesar_foto(reg_foto)
-                        payload = {
-                            "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
-                            "liga": reg_liga, "club": reg_club, "foto": f_b64,
-                            "valor": "N/D", "overall": 70, "viabilidad": "🟡 Media"
-                        }
-                        try:
-                            supabase.table('scouting_db').insert(payload).execute()
-                            st.success(f"{reg_nom} guardado en la nube.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error en Supabase: {e}")
+            reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="reg_foto_dyn")
+            
+            if st.button("Guardar Jugador en Nube", key="btn_reg_scouting"):
+                if reg_nom and supabase:
+                    f_b64 = procesar_foto(reg_foto)
+                    payload = {
+                        "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
+                        "liga": reg_liga, "club": reg_club, "foto": f_b64,
+                        "valor": "N/D", "overall": 70, "viabilidad": "🟡 Media"
+                    }
+                    try:
+                        supabase.table('scouting_db').insert(payload).execute()
+                        st.success(f"{reg_nom} guardado en la nube.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error en Supabase: {e}")
 
         if len(st.session_state['scouting_db']) > 0:
             df_scouting = pd.DataFrame(st.session_state['scouting_db'])
@@ -417,32 +420,33 @@ else:
         st.title("💼 Equipo Ignition")
         
         with st.expander("➕ Añadir Jugador a Equipo Ignition"):
-            with st.form("form_nuevo_equipo"):
-                c_a, c_b = st.columns(2)
-                eq_nom = c_a.text_input("Nombre Completo")
-                eq_edad = c_a.number_input("Edad", 15, 45, 20)
-                eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES)
-                eq_status = c_a.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"])
-                eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES)
-                if eq_liga in EQUIPOS_POR_LIGA:
-                    eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga])
-                else:
-                    eq_club = c_b.text_input("Club (Escribir)")
-                eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'])
+            c_a, c_b = st.columns(2)
+            eq_nom = c_a.text_input("Nombre Completo", key="eq_nom_input")
+            eq_edad = c_a.number_input("Edad", 15, 45, 20, key="eq_edad_input")
+            eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="eq_pos_input")
+            eq_status = c_a.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"], key="eq_status_input")
+            
+            eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="eq_liga_dyn")
+            if eq_liga in EQUIPOS_POR_LIGA:
+                eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga], key="eq_club_dyn")
+            else:
+                eq_club = c_b.text_input("Club (Escribir)", key="eq_club_txt_dyn")
                 
-                if st.form_submit_button("Guardar en Equipo Ignition"):
-                    if eq_nom and supabase:
-                        f_b64 = procesar_foto(eq_foto)
-                        payload = {
-                            "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
-                            "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
-                        }
-                        try:
-                            supabase.table('equipo_ignition').insert(payload).execute()
-                            st.success(f"{eq_nom} registrado en Supabase.")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error en Supabase: {e}")
+            eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="eq_foto_dyn")
+            
+            if st.button("Guardar en Equipo Ignition", key="btn_reg_equipo"):
+                if eq_nom and supabase:
+                    f_b64 = procesar_foto(eq_foto)
+                    payload = {
+                        "nombre": eq_nom, "edad": eq_edad, "posicion": eq_pos,
+                        "liga": eq_liga, "club": eq_club, "foto": f_b64, "status": eq_status
+                    }
+                    try:
+                        supabase.table('equipo_ignition').insert(payload).execute()
+                        st.success(f"{eq_nom} registrado en Supabase.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error en Supabase: {e}")
 
         if len(st.session_state['equipo_ignition']) > 0:
             df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
@@ -455,16 +459,17 @@ else:
         st.title("📥 Registro Manual de Estadísticas")
         
         c1, c2 = st.columns(2)
-        n_jugador = c1.text_input("Nombre del Jugador")
-        n_posicion = c1.selectbox("📍 Posición Específica", LISTA_POSICIONES)
+        n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
+        n_posicion = c1.selectbox("📍 Posición Específica", LISTA_POSICIONES, key="p_pos_input")
         
-        n_liga = c2.selectbox("🏆 Competición", LIGAS_MUNDIALES)
+        # SELECTOR DE LIGA Y EQUIPO REACTIVO FUERA DEL FORM EN PARTIDOS
+        n_liga = c2.selectbox("🏆 Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
         if n_liga in EQUIPOS_POR_LIGA:
-            n_equipo = c2.selectbox("🛡️ Equipo (2026/2027)", EQUIPOS_POR_LIGA[n_liga])
+            n_equipo = c2.selectbox("🛡️ Equipo (2026/2027)", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
         else:
-            n_equipo = c2.text_input("🛡️ Equipo (Escribir nombre del club)")
+            n_equipo = c2.text_input("🛡️ Equipo (Escribir nombre del club)", key="p_club_txt_dyn")
             
-        n_jornada = c1.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)])
+        n_jornada = c1.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
         
         with st.form("form_stats_partido"):
             st.markdown("#### Datos Manuales del Partido")

@@ -46,9 +46,9 @@ def cargar_desde_supabase(tabla):
                     if "valor" in row: elem["Valor"] = row.get("valor", "N/D")
                     if "nacionalidad" in row: elem["Nacionalidad"] = row.get("nacionalidad", "N/D")
                     if "agencia" in row: elem["Agencia"] = row.get("agencia", "N/D")
-                    if "viabilidad" in row: elem["Viabilidad"] = row.get("viabilidad", "🟡 Media")
+                    if "viabilidad" in row: elem["Viabilidad"] = row.get("viabilidad", "Media")
                     if "overall" in row: elem["Overall"] = row.get("overall", 70)
-                    if "status" in row: elem["Status"] = row.get("status", "OBJETIVO 🔵")
+                    if "status" in row: elem["Status"] = row.get("status", "OBJETIVO")
                     registros.append(elem)
                 return registros
         except Exception:
@@ -59,7 +59,7 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y MÉTRICAS
+# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS POR ROL
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
@@ -72,7 +72,7 @@ def obtener_30_metricas(posicion):
             "Pilar 1: Atajadas y Reflejos (8)": ["Atajadas Totales", "Reflejos a Quemarropa", "xG Evitados", "Desvíos Exitosos", "Atrapes sin Rebote", "1v1 Ganados %", "Atajadas de Penal", "Tiros Lejanos Salvados"],
             "Pilar 2: Distribución y Pies (7)": ["Pases Largos Precisos %", "Efectividad Pase Corto %", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo Presión", "Toques de Balón", "Pérdidas en Salida"],
             "Pilar 3: Dominio del Área (8)": ["Salidas por Alto Exitosas", "Despejes de Puños", "Intercepciones fuera de Área", "Duelos Aéreos Ganados %", "Reivindicaciones de Centro", "Tackles Defensivos", "Faltas Recibidas", "Acciones Defensivas Totales"],
-            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Errores Críticos que terminan en Gol", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida (km)", "Goles Concedidos"]
+            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Errores Críticos", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida (km)", "Goles Concedidos"]
         }
     elif posicion == "Defensa Central":
         return {
@@ -146,18 +146,18 @@ def consultar_partidos_jugador(nombre_jugador):
 
 # 4. TODAS LAS LIGAS MUNDIALES MAPPED (46 COMPETICIONES)
 LIGAS_MUNDIALES = [
-    "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
-    "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League One", "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League Two",
-    "🇫🇷 Ligue 1", "🇫🇷 Ligue 2", "🇮🇹 Serie A", "🇮🇹 Serie B",
-    "🇩🇪 Bundesliga", "🇩🇪 2. Bundesliga", "🇸🇪 Allsvenskan", "🇳🇴 Eliteserien",
-    "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
-    "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
-    "🇦🇹 Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
-    "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
-    "🇦🇷 Primera División Argentina", "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
-    "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile", 
-    "🇺🇸 MLS", "🇺🇸 MLS Next Pro", "🇺🇸 USL", "🇯🇵 J-League"
+    "Liga MX", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
+    "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
+    "Premier League", "Championship", "League One", "League Two",
+    "Ligue 1", "Ligue 2", "Serie A", "Serie B",
+    "Bundesliga", "2. Bundesliga", "Allsvenskan", "Eliteserien",
+    "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
+    "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
+    "Bundesliga Austria", "Superliga de Suiza", "Liga Portugal", "Liga 2 Portugal",
+    "Liga Eslovaquia", "Liga Eslovenia",
+    "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
+    "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
+    "MLS", "MLS Next Pro", "USL", "J-League"
 ]
 
 equipos_mx_2026 = [
@@ -168,72 +168,25 @@ equipos_mx_2026 = [
 ]
 
 EQUIPOS_POR_LIGA = {
-    # MÉXICO
-    "🇲🇽 Liga MX": equipos_mx_2026,
-    "🇲🇽 Liga de Expansión": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tepatitlán", "Tepatitlan FC", "Tepatitlán", "Tepatitlán FC", "Tlaxcala FC", "Venados FC FC", "CD Tapatío"],
-    "🇲🇽 Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
-    "🇲🇽 Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
-    "🇲🇽 Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
-    "🇲🇽 Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
-    
-    # ESPAÑA
-    "🇪🇸 La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
-    "🇪🇸 Liga Hypermotion": ["Albacete Balompié", "Burgos CF", "Cádiz CF", "CD Castellón", "CD Eldense", "CD Mirandés", "CD Tenerife", "Córdoba CF", "Deportivo de La Coruña", "FC Cartagena", "Granada CF", "Málaga CF", "Racing de Ferrol", "Racing de Santander", "Real Zaragoza", "SD Eibar", "SD Huesca", "Sporting de Gijón", "UD Almería", "UD Las Palmas"],
-    "🇪🇸 Primera RFEF": ["Andorra CF", "Arenteiro", "Barakaldo", "Bilbao Athletic", "Celta Fortuna", "Cultural Leonesa", "Gimnàstic de Tarragona", "IBiza", "Lugo", "Mérida", "Murcia", "Osasuna B", "Ponferradina", "Real Sociedad B", "Real Unión", "Sabadell", "Sestao River", "Unionistas", "Zamora"],
-    "🇪🇸 Segunda RFEF": ["Ávilés Industrial", "Compostela", "Laredo", "Numancia", "Pontevedra", "Rayo Majadahonda", "Tudelano", "Utebo", "Badalona Futur", "Europa", "Lleida Esportiu", "Sant Andreu", "Terrassa", "Alzira", "Orihuela", "Ucam Murcia"],
-
-    # INGLATERRA
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship": ["Blackburn Rovers", "Bristol City", "Burnley FC", "Cardiff City", "Coventry City", "Derby County", "Hull City", "Luton Town", "Middlesbrough FC", "Millwall FC", "Norwich City", "Oxford United", "Plymouth Argyle", "Preston North End", "QPR", "Sheffield United", "Sheffield Wednesday", "Stoke City", "Swansea City", "Watford FC", "West Bromwich Albion"],
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League One": ["Barnsley", "Birmingham City", "Blackpool", "Bolton Wanderers", "Charlton Athletic", "Exeter City", "Huddersfield Town", "Lincoln City", "Mansfield Town", "Northampton Town", "Peterborough United", "Reading FC", "Rotherham United", "Stockport County", "Wigan Athletic", "Wrexham AFC"],
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 League Two": ["AFC Wimbledon", "Barrow AFC", "Bradford City", "Carlisle United", "Cheltenham Town", "Chesterfield", "Crewe Alexandra", "Doncaster Rovers", "Gillingham FC", "Grimsby Town", "MK Dons", "Notts County", "Port Vale", "Salford City", "Swindon Town", "Walsall FC"],
-
-    # FRANCIA & ITALIA & ALEMANIA
-    "🇫🇷 Ligue 1": ["AJ Auxerre", "Angers SCO", "AS Monaco", "AS Saint-Étienne", "FC Nantes", "FC Lorient", "Losc Lille", "Montpellier HSC", "OGC Nice", "Olympique Lyonnais", "Olympique de Marseille", "Paris Saint-Germain", "RC Lens", "RC Strasbourg", "Stade Brestois", "Stade Reims", "Stade Rennais", "Toulouse FC"],
-    "🇫🇷 Ligue 2": ["AC Ajaccio", "Amiens SC", "Clermont Foot", "EA Guingamp", "FC Annecy", "FC Metz", "Grenoble Foot", "Girondins de Bordeaux", "Paris FC", "Pau FC", "Rodez AF", "SM Caen", "Troyes AC", "US Quevilly"],
-    "🇮🇹 Serie A": ["AC Milan", "ACF Fiorentina", "AS Roma", "Atalanta BC", "Bologna FC", "Cagliari Calcio", "Como 1907", "Empoli FC", "Genoa CFC", "FC Internazionale", "Juventus FC", "SS Lazio", "US Lecce", "AC Monza", "SSC Napoli", "Parma Calcio", "Torino FC", "Udinese Calcio", "U.S. Salernitana", "Venezia FC"],
-    "🇮🇹 Serie B": ["Bari", "Brescia", "Carrarese", "Catanzaro", "Cesena", "Cittadella", "Cosenza", "Cremonese", "Frosinone", "Juve Stabia", "Modena", "Palermo", "Pisa", "Reggiana", "Sampdoria", "Sassuolo", "Spezia", "Südtirol"],
-    "🇩🇪 Bundesliga": ["1. FC Heidenheim", "1. FC Union Berlin", "1. FSV Mainz 05", "Bayer 04 Leverkusen", "FC Bayern München", "VfL Bochum", "Borussia Dortmund", "Borussia Mönchengladbach", "Eintracht Frankfurt", "FC Augsburg", "RB Leipzig", "SC Freiburg", "SV Werder Bremen", "TSG 1899 Hoffenheim", "VfB Stuttgart", "VfL Wolfsburg", "FC St. Pauli", "Holstein Kiel"],
-    "🇩🇪 2. Bundesliga": ["1. FC Kaiserslautern", "1. FC Köln", "1. FC Magdeburg", "Eintracht Braunschweig", "FC Schalke 04", "Fortuna Düsseldorf", "Greuther Fürth", "Hamburger SV", "Hannover 96", "Hertha BSC", "Karlsruher SC", "SC Paderborn 07", "SSV Ulm 1846", "SV Elversberg"],
-
-    # EUROPA DE NORTE Y ORIENTE
-    "🇸🇪 Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
-    "🇳🇴 Eliteserien": ["Bodø/Glimt", "SK Brann", "Fredrikstad FK", "FK Haugesund", "KFUM Oslo", "Lillestrøm SK", "Molde FK", "Odd BK", "Rosenborg BK", "Sandefjord Fotball", "Sarpsborg 08", "Strømsgodset IF", "Tromsø IL", "Viking FK"],
-    "🇳🇱 Eredivisie": ["AFC Ajax", "AZ Alkmaar", "Feyenoord Rotterdam", "Fortuna Sittard", "Go Ahead Eagles", "FC Groningen", "sc Heerenveen", "Heracles Almelo", "NAC Breda", "PEC Zwolle", "PSV Eindhoven", "RKC Waalwijk", "Sparta Rotterdam", "FC Twente", "FC Utrecht", "Vitesse Arnhem", "Willem II"],
-    "🇧🇪 Jupiler Pro League": ["RSC Anderlecht", "Antwerp FC", "Cercle Brugge", "Club Brugge", "KRC Genk", "KAA Gent", "KVC Westerlo", "Oud-Heverlee Leuven", "RSC Charleroi", "Royale Union Saint-Gilloise", "Standard Liège"],
-    "🇩🇰 Superliga Dinamarca": ["Aalborg BK", "AGF Aarhus", "Brøndby IF", "FC Copenhagen", "FC Midtjylland", "FC Nordsjælland", "Lyngby BK", "Randers FC", "Silkeborg IF", "Viborg FF"],
-    "🇵🇱 Ekstraklasa": ["Cracovia", "Górnik Zabrze", "Jagiellonia Białystok", "Lech Poznań", "Legia Warszawa", "Piast Gliwice", "Pogoń Szczecin", "Raków Częstochowa", "Śląsk Wrocław", "Widzew Łódź"],
-    "🇧🇬 efbet League Bulgaria": ["Botev Plovdiv", "CSKA 1948", "CSKA Sofia", "Cherno More", "Levski Sofia", "Ludogorets Razgrad", "Lokomotiv Plovdiv", "Spartak Varna"],
-    "🇭🇷 SuperSport HNL": ["Dinamo Zagreb", "HNK Gorica", "Hajduk Split", "Istra 1961", "Lokomotiva Zagreb", "NK Osijek", "Rijeka", "Slaven Belupo"],
-    "🇨🇿 Chance Liga": ["Baník Ostrava", "Bohemians 1905", "Dukla Praha", "FC Hradec Králové", "MFK Karviná", "SK Sigma Olomouc", "SK Slavia Praha", "FC Slovan Liberec", "AC Sparta Praha", "FC Viktoria Plzeň"],
-    "🇷🇸 Superliga Serbia": ["FK TSC Bačka Topola", "FK Čukarički", "FK Partizan", "FK Radnički Niš", "FK Vojvodina", "Red Star Belgrade (Crvena Zvezda)", "OFK Beograd"],
-    "🇦🇹 Bundesliga Austria": ["FC Red Bull Salzburg", "FK Austria Wien", "LASK", "SK Rapid Wien", "SK Sturm Graz", "TSV Hartberg", "Wolfsberger AC"],
-    "🇨🇭 Superliga de Suiza": ["BSC Young Boys", "FC Basel", "FC Lugano", "FC Luzern", "FC Servette", "FC St. Gallen", "FC Zürich", "Grasshopper Club Zürich"],
-    "🇵🇹 Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"],
-    "🇵🇹 Liga 2 Portugal": ["Académico de Viseu", "Benfica B", "CD Feirense", "FC Felgueiras", "FC Penafiel", "GD Chaves", "Lousada", "Marítimo", "Oliveirense", "Porto B", "Torreense", "Vizela"],
-    "🇸Kb Liga Eslovaquia": ["DAC Dunajská Streda", "FC Košice", "MFK Ružomberok", "ŠK Slovan Bratislava", "FC Spartak Trnava", "AS Trenčín", "MŠK Žilina"],
-    "🇸🇮 Liga Eslovenia": ["FC Koper", "NK Celje", "NK Domžale", "NK Maribor", "NK Olimpija Ljubljana", "NK Mura"],
-
-    # AMÉRICA & ASIA
-    "🇦🇷 Primera División Argentina": ["Boca Juniors", "River Plate", "Racing Club", "Independiente", "San Lorenzo", "Vélez Sarsfield", "Estudiantes de La Plata", "Gimnasia La Plata", "Talleres de Córdoba", "Belgrano", "Rosario Central", "Newell's Old Boys", "Argentinos Juniors", "CA Huracán", "CA Lanús", "Godoy Cruz", "Defensa y Justicia", "Platense", "Unión de Santa Fe", "Tigre"],
-    "🇨🇷 Primera División Costa Rica": ["AD San Carlos", "Alajuelense", "CS Cartaginés", "CS Herediano", "Deportivo Saprissa", "Municipal Liberia", "Puntarenas FC", "Pérez Zeledón", "Santos de Guápiles"],
-    "🇨🇴 Primera División Colombia": ["América de Cali", "Atlético Bucaramanga", "Atlético Nacional", "Deportes Tolima", "Deportivo Cali", "Deportivo Independiente Medellín", "Junior de Barranquilla", "Millonarios FC", "Once Caldas", "Santa Fe"],
-    "🇧🇷 Brasileirao": ["Athletico Paranaense", "Atlético Mineiro", "Bahia", "Botafogo", "Corinthians", "Cruzeiro", "Flamengo", "Fluminense", "Fortaleza", "Gremio", "Internacional", "Juventude", "Palmeiras", "Red Bull Bragantino", "Sao Paulo", "Vasco da Gama", "Vitoria"],
-    "🇧🇷 Brasileirao Série B": ["America Mineiro", "Avaí FC", "Ceará SC", "Chapecoense", "Coritiba", "CRB", "Goiás EC", "Guarani FC", "Itaúna", "Novorizontino", "Operário", "Ponte Preta", "Santos FC", "Sport Recife", "Vila Nova"],
-    "🇺🇾 Primera División Uruguay": ["Boston River", "Danubio FC", "Defensor Sporting", "Liverpool Montevideo", "Montevideo Wanderers", "Nacional", "Peñarol", "River Plate Montevideo"],
-    "🇨🇱 Primera División Chile": ["Audax Italiano", "Cobreloa", "Cobresal", "Colo-Colo", "Coquimbo Unido", "Everton de Viña del Mar", "Huachipato", "Ñublense", "Palestino", "Unión Española", "Universidad Católica", "Universidad de Chile"],
-    "🇺🇸 MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"],
-    "🇺🇸 MLS Next Pro": ["Austin FC II", "Carolina Core FC", "Chattanooga FC", "Chicago Fire II", "Colorado Rapids 2", "Columbus Crew 2", "Crown Legacy FC", "FC Cincinnati 2", "Huntsville City FC", "Inter Miami II", "LA Galaxy II", "MNUFC2", "NYCFC II", "NYRB II", "Orlando City B", "Philadelphia Union II", "Real Monarchs", "St Louis CITY 2", "Tacoma Defiance", "Town FC", "Ventura County FC"],
-    "🇺🇸 USL": ["Birmingham Legion FC", "Charleston Battery", "Colorado Springs Switchbacks", "Detroit City FC", "El Paso Locomotive FC", "Indy Eleven", "Louisville City FC", "Memphis 901 FC", "Miami FC", "New Mexico United", "Oakland Roots SC", "Orange County SC", "Phoenix Rising FC", "Pittsburgh Riverhounds", "Sacramento Republic FC", "San Antonio FC", "Tampa Bay Rowdies"],
-    "🇯🇵 J-League": ["Albirex Niigata", "Avispa Fukuoka", "Cerezo Osaka", "FC Tokyo", "Gamba Osaka", "Hokkaido Consadole Sapporo", "Júbilo Iwata", "Kashima Antlers", "Kashiwa Reysol", "Kawasaki Frontale", "Machida Zelvia", "Nagoya Grampus", "Sanfrecce Hiroshima", "Shonan Bellmare", "Urawa Red Diamonds", "Vissel Kobe", "Yokohama F. Marinos"]
+    "Liga MX": equipos_mx_2026,
+    "Liga de Expansión MX": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tlaxcala FC", "Venados FC", "CD Tapatío"],
+    "Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
+    "Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
+    "Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
+    "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
+    "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
+    "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"],
+    "Liga Portugal": ["Arouca", "AVS", "SL Benfica", "Boavista FC", "SC Braga", "Casa Pia AC", "GD Estoril Praia", "CF Estrela da Amadora", "FC Famalicão", "SC Farense", "Gil Vicente FC", "Moreirense FC", "CD Nacional", "FC Porto", "Rio Ave FC", "CD Santa Clara", "Sporting CP", "Vitória de Guimarães"],
+    "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL REESTRUCTURADO
+# 5. MOSTRAR PERFIL SOBRIO Y PROFESIONAL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
-    st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
+    st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
     
-    pestanas_principales = st.tabs(["📋 General & Contrato", "📊 Rendimiento & Data", "💰 Mercado & Viabilidad"])
+    pestanas_principales = st.tabs(["General & Contrato", "Rendimiento & Data", "Mercado & Viabilidad"])
     
     df_partidos = consultar_partidos_jugador(jugador['Nombre'])
     ejes_radar = obtener_ejes_radar(jugador['Posición'])
@@ -250,7 +203,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             """, unsafe_allow_html=True)
             
         with c_inf1:
-            st.markdown("##### 📌 Datos Personales y Deportivos")
+            st.markdown("##### Datos Personales y Deportivos")
             st.markdown(f"**Nombre:** {jugador['Nombre']}")
             st.markdown(f"**Edad:** {jugador['Edad']} años")
             st.markdown(f"**Posición Específica:** {jugador['Posición']}")
@@ -260,7 +213,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 st.markdown("**Nacionalidad:** N/D")
 
         with c_inf2:
-            st.markdown("##### 📝 Situación Contractual")
+            st.markdown("##### Situación Contractual")
             st.markdown(f"**Club Actual:** {jugador['Club']}")
             st.markdown(f"**Liga / Competición:** {jugador.get('Liga', 'N/D')}")
             if 'Agencia' in jugador and jugador['Agencia']: 
@@ -270,8 +223,8 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
 
     # TAB 2: RENDIMIENTO & DATA
     with pestanas_principales[1]:
-        st.markdown("### 📈 Centro de Análisis Estadístico")
-        sub_vistas = st.tabs(["🌐 Compendio General (p/90)", "🏆 Promedio por Torneo", "🎯 Ficha de Partido Único"])
+        st.markdown("### Centro de Análisis Estadístico")
+        sub_vistas = st.tabs(["Compendio General (p/90)", "Promedio por Torneo", "Ficha de Partido Único"])
         
         tot_min = df_partidos['minutos'].sum() if not df_partidos.empty else 0
         tot_partidos = len(df_partidos) if not df_partidos.empty else 0
@@ -298,7 +251,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 ]
                 
             with c_rad:
-                st.caption(f"📊 Acumulado: **{tot_partidos} partidos** | **{tot_min} minutos jugados**")
+                st.caption(f"Acumulado: **{tot_partidos} partidos** | **{tot_min} minutos jugados**")
                 angulos = [n / 5 * 2 * math.pi for n in range(5)]; angulos += angulos[:1]
                 valores_plot = val_radar + val_radar[:1]
                 fig, ax = plt.subplots(figsize=(2.2, 2.2), subplot_kw=dict(polar=True))
@@ -331,7 +284,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         with sub_vistas[1]:
             if not df_partidos.empty and 'liga' in df_partidos.columns:
                 torneos_disponibles = df_partidos['liga'].unique().tolist()
-                torneo_sel = st.selectbox("🏆 Seleccionar Torneo para Evaluar:", torneos_disponibles, key=f"torneo_sel_{jugador['ID']}")
+                torneo_sel = st.selectbox("Seleccionar Torneo para Evaluar:", torneos_disponibles, key=f"torneo_sel_{jugador['ID']}")
                 
                 df_torneo = df_partidos[df_partidos['liga'] == torneo_sel]
                 min_torneo = df_torneo['minutos'].sum()
@@ -393,7 +346,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 idx_p = partidos_lista.index(partido_sel)
                 p_data = df_partidos_torneo.iloc[idx_p]
                 
-                st.success(f"📌 Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
+                st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
                 
                 cp1, cp2, cp3, cp4 = st.columns(4)
                 cp1.metric("Minutos Jugados", f"{p_data['minutos']}'")
@@ -429,23 +382,23 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
 
     # TAB 3: MERCADO & VIABILIDAD
     with pestanas_principales[2]:
-        st.markdown("### 💰 Ficha Financiera y Viabilidad de Fichaje")
+        st.markdown("### Ficha Financiera y Viabilidad de Fichaje")
         cm1, cm2, cm3 = st.columns(3)
         
         val_m = jugador.get('Valor', 'N/D')
-        via_m = jugador.get('Viabilidad', '🟡 Media')
+        via_m = jugador.get('Viabilidad', 'Media')
         
         cm1.metric("Valoración Estimada de Mercado", val_m)
         cm2.metric("Semáforo de Viabilidad", via_m)
-        cm3.metric("Cupo NMM / Extranjero", "Aplica" if "🇲🇽" not in jugador.get('Nacionalidad', '') else "Nacional")
+        cm3.metric("Cupo NMM / Extranjero", "Aplica" if "Mexicana" not in jugador.get('Nacionalidad', '') else "Nacional")
         
         st.markdown("---")
-        st.markdown("##### 📌 Notas Estratégicas de Negociación")
+        st.markdown("##### Notas Estratégicas de Negociación")
         st.write(f"- **Perfil Financiero:** Jugador tasado en `{val_m}` accesible bajo esquema de cesión o compra de porcentaje de pase.")
         st.write(f"- **Factibilidad:** Calificado con viabilidad `{via_m}` según estatus de contrato actual en {jugador['Club']}.")
 
     # MÓDULO DE EDICIÓN
-    with st.expander(f"✏️ Editar Perfil y Subir Foto de {jugador['Nombre']}"):
+    with st.expander(f"Editar Perfil y Subir Foto de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
         nueva_edad = c_ed1.number_input("Edad", 15, 45, value=jugador['Edad'], key=f"ed_{jugador['ID']}")
@@ -456,7 +409,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
         nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
         nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
-        nueva_viab = c_ed2.selectbox("Viabilidad", ["🟢 Alta", "🟡 Media", "🔴 Baja"], index=["🟢 Alta", "🟡 Media", "🔴 Baja"].index(jugador.get('Viabilidad', '🟡 Media')), key=f"via_{jugador['ID']}")
+        nueva_viab = c_ed2.selectbox("Viabilidad", ["Alta", "Media", "Baja"], index=["Alta", "Media", "Baja"].index(jugador.get('Viabilidad', 'Media')), key=f"via_{jugador['ID']}")
         
         nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:
@@ -467,7 +420,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         nueva_foto = st.file_uploader("Subir Foto de Perfil (PNG, JPG)", type=['jpg', 'png', 'jpeg'], key=f"ft_{jugador['ID']}")
         
         col_btn1, col_btn2 = st.columns([1, 1])
-        if col_btn1.button("💾 Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
+        if col_btn1.button("Guardar Cambios en Supabase", key=f"sv_{jugador['ID']}"):
             foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
             payload = {
                 "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
@@ -485,7 +438,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error en Supabase: {e}")
             
-        if col_btn2.button("🗑️ Eliminar Perfil", key=f"dl_{jugador['ID']}"):
+        if col_btn2.button("Eliminar Perfil", key=f"dl_{jugador['ID']}"):
             if supabase and jugador.get('ID'):
                 try: 
                     supabase.table(tabla_origen).delete().eq('id', jugador['ID']).execute()
@@ -494,7 +447,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA
+# 6. ESTÉTICA SOBRIA Y CORPORATIVA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -578,16 +531,16 @@ else:
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        with st.expander("➕ Crear Nuevo Jugador a Scoutear"):
+        with st.expander("Crear Nuevo Jugador a Scoutear"):
             c_a, c_b = st.columns(2)
             reg_nom = c_a.text_input("Nombre Completo", key="reg_nom_input")
             reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
             reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
-            reg_nac = c_a.text_input("Nacionalidad (ej. 🇲🇽 Mexicana)", key="reg_nac_input")
+            reg_nac = c_a.text_input("Nacionalidad", key="reg_nac_input")
             
             reg_val = c_b.text_input("Valor de Mercado (ej. €1.2M)", key="reg_val_input")
             reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
-            reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["🟢 Alta", "🟡 Media", "🔴 Baja"], key="reg_viab_input")
+            reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["Alta", "Media", "Baja"], key="reg_viab_input")
             
             reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="reg_liga_dyn")
             if reg_liga in EQUIPOS_POR_LIGA:
@@ -623,14 +576,14 @@ else:
                 mostrar_perfil_jugador(st.session_state['scouting_db'][seleccion.selection.rows[0]], 'scouting_db', seleccion.selection.rows[0])
 
     elif opcion == "Equipo Ignition":
-        st.title("💼 Equipo Ignition")
+        st.title("Equipo Ignition")
         
-        with st.expander("➕ Añadir Jugador a Equipo Ignition"):
+        with st.expander("Añadir Jugador a Equipo Ignition"):
             c_a, c_b = st.columns(2)
             eq_nom = c_a.text_input("Nombre Completo", key="eq_nom_input")
             eq_edad = c_a.number_input("Edad", 15, 45, 20, key="eq_edad_input")
             eq_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="eq_pos_input")
-            eq_status = c_a.selectbox("Estatus", ["FIRMADO 🟡", "OBJETIVO 🔵", "SEGUIMIENTO INTENSIVO 🟢"], key="eq_status_input")
+            eq_status = c_a.selectbox("Estatus", ["FIRMADO", "OBJETIVO", "SEGUIMIENTO INTENSIVO"], key="eq_status_input")
             
             eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="eq_liga_dyn")
             if eq_liga in EQUIPOS_POR_LIGA:
@@ -662,22 +615,22 @@ else:
                 mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
 
     elif opcion == "Ingreso de Data (Partidos)":
-        st.title("📥 Registro Manual de Estadísticas")
+        st.title("Registro Manual de Estadísticas de Partido")
         
         c1, c2 = st.columns(2)
         n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
-        n_posicion = c1.selectbox("📍 Posición Específica", LISTA_POSICIONES, key="p_pos_input")
+        n_posicion = c1.selectbox("Posición Específica", LISTA_POSICIONES, key="p_pos_input")
         
-        n_liga = c2.selectbox("🏆 Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
+        n_liga = c2.selectbox("Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
         if n_liga in EQUIPOS_POR_LIGA:
-            n_equipo = c2.selectbox("🛡️ Equipo (2026/2027)", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
+            n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
         else:
-            n_equipo = c2.text_input("🛡️ Equipo (Escribir nombre del club)", key="p_club_txt_dyn")
+            n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
             
-        n_jornada = c1.selectbox("Jornada", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
+        n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
         
         with st.form("form_stats_partido"):
-            st.markdown("#### Datos Manuales del Partido")
+            st.markdown("#### Registro de Acciones del Partido")
             cd1, cd2, cd3, cd4 = st.columns(4)
             with cd1: 
                 v_minutos = st.number_input("Minutos Jugados", 0, 120, 90)

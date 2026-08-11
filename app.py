@@ -524,7 +524,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                     except Exception as e:
                         st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA GLOBAL
+# 6. ESTÉTICA GLOBAL DE LA PLATAFORMA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -539,94 +539,121 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (LOGIN HERO FULL SCREEN & ROLES)
+# 7. SESIÓN Y NAVEGACIÓN (PANTALLA DE LOGIN CON MÓDULO SÓLIDO DE ALTO CONTRASTE)
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
 
 if not st.session_state['logged_in']:
     
-    # CSS DINÁMICO PARA FONDO Y MÓDULO DE CRISTAL
     bg_image_path = None
     for img_name in ["image_8fb87b.jpeg", "image_8fb87b.jpg", "image_8fb87b.png", "login_hero.jpeg", "login_hero.jpg", "login_hero.png"]:
         if os.path.exists(img_name):
             bg_image_path = img_name
             break
             
+    bg_css = ""
     if bg_image_path:
-        with open(bg_image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-        mime_type = "image/jpeg" if "jpg" in bg_image_path or "jpeg" in bg_image_path else "image/png"
-        
-        st.markdown(f"""
-        <style>
+        with open(bg_image_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+        mime = "image/jpeg" if "jpg" in bg_image_path or "jpeg" in bg_image_path else "image/png"
+        bg_css = f"""
         .stApp {{
-            background-image: url("data:{mime_type};base64,{encoded_string}") !important;
+            background-image: url("data:{mime};base64,{encoded}") !important;
             background-size: cover !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
             background-attachment: fixed !important;
         }}
-        [data-testid="stHeader"] {{ background-color: transparent !important; }}
-        
-        /* Módulo Azul Marino de Cristal */
-        [data-testid="column"]:nth-of-type(2) {{
-            background: rgba(26, 43, 76, 0.90) !important;
-            backdrop-filter: blur(12px) !important;
-            border-radius: 16px !important;
-            padding: 40px !important;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
-            border-top: 6px solid #C8A165 !important;
-            border-bottom: 6px solid #C8A165 !important;
-            margin-top: 15vh !important;
-        }}
-        /* Títulos en Blanco */
-        .log-title {{ color: #FFFFFF; font-size: 38px; font-weight: 900; text-align: center; margin: 0; letter-spacing: 2px; }}
-        .log-subtitle {{ color: #FFFFFF; font-size: 18px; font-weight: 400; text-align: center; margin: 0; letter-spacing: 1px; }}
-        .log-tag {{ color: #C8A165; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-align: center; margin-top: 8px; margin-bottom: 25px; }}
-        /* Etiquetas Blancas para los inputs */
-        .stTextInput label {{ color: #FFFFFF !important; font-weight: 600 !important; font-size: 14px !important; }}
-        </style>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <style>
-        [data-testid="column"]:nth-of-type(2) { background: #1A2B4C !important; border-radius: 16px !important; padding: 40px !important; border-top: 6px solid #C8A165 !important; margin-top: 15vh !important; }
-        .log-title { color: #FFFFFF; font-size: 38px; font-weight: 900; text-align: center; margin: 0; }
-        .log-subtitle { color: #FFFFFF; font-size: 18px; text-align: center; margin: 0; }
-        .log-tag { color: #C8A165; font-size: 11px; text-align: center; margin-top: 8px; margin-bottom: 25px; }
-        .stTextInput label { color: #FFFFFF !important; }
-        </style>
-        """, unsafe_allow_html=True)
+        """
 
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        st.markdown("""
-            <div class='log-title'>IGNITION</div>
-            <div class='log-subtitle'>SCOUTING PRO</div>
-            <div class='log-tag'>DIRECCIÓN DEPORTIVA E INTELIGENCIA TÁCTICA</div>
-        """, unsafe_allow_html=True)
-        
-        usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
-        password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
-        st.write("")
-        
-        if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
-            u_lower = usuario.lower()
-            if u_lower == "christian" and password == "Saopaulo45":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'admin'
-                st.rerun()
-            elif u_lower == "sebastian" and password == "Inmortal1":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'viewer'
-                st.rerun()
-            elif u_lower == "gerardo" and password == "Babui7":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'viewer'
-                st.rerun()
-            else:
-                st.error("Credenciales incorrectas")
+    st.markdown(f"""
+    <style>
+    {bg_css}
+    [data-testid="stHeader"] {{ background-color: transparent !important; }}
+    
+    /* Centrado estricto del contenedor principal en la pantalla de Login */
+    .main .block-container {{
+        max-width: 480px !important;
+        padding-top: 6vh !important;
+        padding-bottom: 2rem !important;
+    }}
+    
+    /* Módulo Tarjeta Azul Marino Sólido que TAPA las letras del fondo */
+    div[data-testid="stVerticalBlock"] > div {{
+        background-color: rgba(26, 43, 76, 0.95) !important;
+        border: 2px solid #C8A165 !important;
+        border-radius: 18px !important;
+        padding: 35px 30px !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.75) !important;
+    }}
+    
+    /* Tipografía de Alto Contraste */
+    .log-title {{ color: #FFFFFF !important; font-size: 38px !important; font-weight: 900 !important; text-align: center !important; margin: 0 !important; letter-spacing: 2px !important; }}
+    .log-subtitle {{ color: #C8A165 !important; font-size: 18px !important; font-weight: 800 !important; text-align: center !important; margin-top: 4px !important; letter-spacing: 1px !important; }}
+    .log-tag {{ color: #F1F5F9 !important; font-size: 11px !important; font-weight: 600 !important; text-align: center !important; margin-top: 6px !important; margin-bottom: 20px !important; letter-spacing: 1.5px !important; opacity: 0.95 !important; }}
+    
+    /* Estilizado de Campos de Entrada */
+    .stTextInput label {{ color: #FFFFFF !important; font-weight: 700 !important; font-size: 14px !important; margin-bottom: 4px !important; }}
+    .stTextInput input {{
+        background-color: #0F172A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+    }}
+    .stTextInput input:focus {{
+        border-color: #C8A165 !important;
+        box-shadow: 0 0 0 1px #C8A165 !important;
+    }}
+    
+    /* Botón Dorado Elegante */
+    .stButton > button {{
+        background-color: #C8A165 !important;
+        color: #1A2B4C !important;
+        font-weight: 900 !important;
+        font-size: 14px !important;
+        letter-spacing: 1px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        padding: 12px !important;
+        margin-top: 15px !important;
+    }}
+    .stButton > button:hover {{
+        background-color: #FFFFFF !important;
+        color: #1A2B4C !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class='log-title'>IGNITION</div>
+        <div class='log-subtitle'>SCOUTING PRO</div>
+        <div class='log-tag'>DIRECCIÓN DEPORTIVA E INTELIGENCIA TÁCTICA</div>
+        <hr style='border: none; border-top: 1px solid rgba(200, 161, 101, 0.4); margin-bottom: 20px;'>
+    """, unsafe_allow_html=True)
+    
+    usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
+    password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
+    st.write("")
+    
+    if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
+        u_lower = usuario.lower()
+        if u_lower == "christian" and password == "Saopaulo45":
+            st.session_state['logged_in'] = True
+            st.session_state['role'] = 'admin'
+            st.rerun()
+        elif u_lower == "sebastian" and password == "Inmortal1":
+            st.session_state['logged_in'] = True
+            st.session_state['role'] = 'viewer'
+            st.rerun()
+        elif u_lower == "gerardo" and password == "Babui7":
+            st.session_state['logged_in'] = True
+            st.session_state['role'] = 'viewer'
+            st.rerun()
+        else:
+            st.error("Credenciales incorrectas")
 
 else:
     with st.sidebar:

@@ -184,9 +184,24 @@ def calcular_promedios_df(df_input):
             
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES (CON LEAGUES CUP)
+# 4. LIGAS MUNDIALES E INTERNACIONALES COMPLETAS
 LIGAS_MUNDIALES = [
-    "Liga MX", "Leagues Cup", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
+    # TORNEOS INTERNACIONALES UEFA, CONCACAF, CONMEBOL
+    "Previa UCL", 
+    "Previa UEL", 
+    "Previa UECL", 
+    "Champions League", 
+    "Europa League", 
+    "Conference League", 
+    "Concacaf Champions Cup", 
+    "Copa Centroamericana", 
+    "Leagues Cup", 
+    "Copa Libertadores", 
+    "Copa Sudamericana",
+    "Copa Doméstica / Otra Competencia (Escribir)",
+    
+    # LIGAS DOMÉSTICAS
+    "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
     "Premier League", "Championship", "League One", "League Two",
     "Ligue 1", "Ligue 2", "Serie A", "Serie B",
@@ -231,7 +246,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
     
-    # Pestañas adaptadas según origen
     pestanas_principales = st.tabs(["General & Contrato", "Rendimiento & Data", "Mercado & Viabilidad"] if tabla_origen == 'scouting_db' else ["General & Contrato", "Rendimiento & Data"])
     
     df_partidos = consultar_partidos_jugador(jugador['Nombre'])
@@ -417,7 +431,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             cm2.metric("Semáforo de Viabilidad", via_m_clean)
             cm3.metric("Cupo NMM / Extranjero", "Nacional" if es_nacional else "Aplica Extranjero")
 
-    # MÓDULO DE EDICIÓN CON PROTECCIÓN DE ESQUEMA DE TABLAS
+    # MÓDULO DE EDICIÓN CON SOPORTE PARA COPAS Y COMPETENCIAS FLEXIBLES
     with st.expander(f"Editar Perfil de {jugador['Nombre']}"):
         c_ed1, c_ed2 = st.columns(2)
         nuevo_nom = c_ed1.text_input("Nombre", value=jugador['Nombre'], key=f"nm_{jugador['ID']}")
@@ -440,7 +454,12 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             st_idx = status_opciones.index(st_raw) if st_raw in status_opciones else 0
             nuevo_status = c_ed2.selectbox("Estatus", status_opciones, index=st_idx, key=f"st_{jugador['ID']}")
 
-        nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
+        nueva_liga_sel = c_ed2.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
+        if "Copa Doméstica" in nueva_liga_sel:
+            nueva_liga = c_ed2.text_input("Nombre de la Copa (ej. Copa del Rey, Slovnaft Cup)", value=jugador.get('Liga', ''), key=f"lg_copa_txt_edit_{jugador['ID']}")
+        else:
+            nueva_liga = nueva_liga_sel
+
         if nueva_liga in EQUIPOS_POR_LIGA:
             nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
         else:
@@ -463,7 +482,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             if nueva_nac: payload["nacionalidad"] = nueva_nac
             if nueva_agencia: payload["agencia"] = nueva_agencia
 
-            # CAMPOS EXCLUSIVOS SEGÚN TABLA DE DESTINO
             if tabla_origen == 'scouting_db':
                 payload["valor"] = nuevo_val
                 payload["viabilidad"] = nueva_viab
@@ -582,11 +600,16 @@ else:
             reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
             reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["Alta", "Media", "Baja"], key="reg_viab_input")
             
-            reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="reg_liga_dyn")
+            reg_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="reg_liga_dyn")
+            if "Copa Doméstica" in reg_liga_sel:
+                reg_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="reg_liga_copa_txt")
+            else:
+                reg_liga = reg_liga_sel
+
             if reg_liga in EQUIPOS_POR_LIGA:
                 reg_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[reg_liga], key="reg_club_dyn")
             else:
-                reg_club = c_b.text_input("Club (Escribir)", key="reg_club_txt_dyn")
+                reg_club = c_b.text_input("Club (Escribir nombre)", key="reg_club_txt_dyn")
                 
             reg_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="reg_foto_dyn")
             
@@ -627,11 +650,16 @@ else:
             eq_nac = c_a.text_input("Nacionalidad", key="eq_nac_input")
             eq_ag = c_b.text_input("Agencia de Representación", key="eq_ag_input")
             
-            eq_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="eq_liga_dyn")
+            eq_liga_sel = c_b.selectbox("Liga / Competición Base", LIGAS_MUNDIALES, key="eq_liga_dyn")
+            if "Copa Doméstica" in eq_liga_sel:
+                eq_liga = c_b.text_input("Nombre de la Copa (Escribir)", key="eq_liga_copa_txt")
+            else:
+                eq_liga = eq_liga_sel
+
             if eq_liga in EQUIPOS_POR_LIGA:
                 eq_club = c_b.selectbox("Club", EQUIPOS_POR_LIGA[eq_liga], key="eq_club_dyn")
             else:
-                eq_club = c_b.text_input("Club (Escribir)", key="eq_club_txt_dyn")
+                eq_club = c_b.text_input("Club (Escribir nombre)", key="eq_club_txt_dyn")
                 
             eq_foto = st.file_uploader("Foto de Perfil (Opcional)", type=['jpg', 'png', 'jpeg'], key="eq_foto_dyn")
             
@@ -671,7 +699,7 @@ else:
             todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
         todos_jugadores = list(set(todos_jugadores))
         
-        # PESTAÑA A: CAPTURAR NUEVO PARTIDO
+        # PESTAÑA A: CAPTURAR NUEVO PARTIDO CON LIGAS E INTERNACIONALES FLEXIBLES
         with tab_captura:
             c1, c2 = st.columns(2)
             if todos_jugadores:
@@ -681,13 +709,18 @@ else:
                 
             n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
             
-            n_liga = c2.selectbox("Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
+            n_liga_sel = c2.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
+            if "Copa Doméstica" in n_liga_sel:
+                n_liga = c2.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
+            else:
+                n_liga = n_liga_sel
+
             if n_liga in EQUIPOS_POR_LIGA:
                 n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
             else:
                 n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
                 
-            jornadas_disponibles = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
+            jornadas_disponibles = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "2da Ronda Previa", "3ra Ronda Previa", "Playoffs Previa", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
             n_jornada = c1.selectbox("Jornada / Fase", jornadas_disponibles, key="p_jornada_input")
             v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
@@ -763,7 +796,7 @@ else:
                     metricas_pos_ed = obtener_30_metricas(pos_ed)
                     valores_corregidos = {}
                     
-                    jornadas_opciones = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
+                    jornadas_opciones = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "2da Ronda Previa", "3ra Ronda Previa", "Playoffs Previa", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
                     j_curr_val = p_curr.get('jornada', 'Jornada 1')
                     j_idx = jornadas_opciones.index(j_curr_val) if j_curr_val in jornadas_opciones else 0
                     
@@ -775,15 +808,20 @@ else:
                         med_c1, med_c2 = st.columns(2)
                         
                         ed_jornada = med_c1.selectbox("Jornada / Fase", jornadas_opciones, index=j_idx, key="ed_jornada_k")
-                        ed_liga = med_c2.selectbox("Competición (Liga)", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
+                        ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
                         
+                        if "Copa Doméstica" in ed_liga_sel:
+                            ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key="ed_liga_copa_txt")
+                        else:
+                            ed_liga = ed_liga_sel
+
                         if ed_liga in EQUIPOS_POR_LIGA:
                             eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
                             e_curr_val = p_curr.get('equipo', eq_opciones[0])
                             e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
                             ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key="ed_equipo_k")
                         else:
-                            ed_equipo = med_c1.text_input("Equipo Rival", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
+                            ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
                             
                         ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
                         

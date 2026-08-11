@@ -56,7 +56,7 @@ def cargar_desde_supabase(tabla):
             pass
     return []
 
-# Sincronización inicial de sesiones
+# Sincronización inicial
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
@@ -183,7 +183,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL
+# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -616,7 +616,8 @@ else:
     elif opcion == "Ingreso de Data (Partidos)":
         st.title("Registro Manual de Estadísticas de Partido")
         
-        c1, c2 = st.columns(2)
+        # PESTAÑAS: CREAR PARTIDO Y EDITAR PARTIDO EXISTENTE
+        tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir Partido Cargado"])
         
         todos_jugadores = []
         if 'scouting_db' in st.session_state:
@@ -625,85 +626,150 @@ else:
             todos_jugadores += [j['Nombre'] for j in st.session_state['equipo_ignition']]
         todos_jugadores = list(set(todos_jugadores))
         
-        if todos_jugadores:
-            n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
-        else:
-            n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
+        # ---------------------------------------------------------
+        # PESTAÑA A: CAPTURAR NUEVO PARTIDO
+        # ---------------------------------------------------------
+        with tab_captura:
+            c1, c2 = st.columns(2)
+            if todos_jugadores:
+                n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
+            else:
+                n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
+                
+            n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
             
-        n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
-        
-        n_liga = c2.selectbox("Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
-        if n_liga in EQUIPOS_POR_LIGA:
-            n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
-        else:
-            n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
-            
-        n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
-        v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
+            n_liga = c2.selectbox("Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
+            if n_liga in EQUIPOS_POR_LIGA:
+                n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
+            else:
+                n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
+                
+            n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
+            v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
-        # FORMULARIO OPTIMIZADO
-        st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
-        metricas_pos = obtener_30_metricas(n_posicion)
-        
-        valores_capturados = {}
-        with st.form("form_stats_dinamico"):
-            tabs_p = st.tabs(list(metricas_pos.keys()))
-            for i, (pilar, lista_m) in enumerate(metricas_pos.items()):
-                with tabs_p[i]:
-                    cols = st.columns(4)
-                    for j, metrica in enumerate(lista_m):
-                        if "xG Evitados" in metrica or "Diferencia" in metrica:
-                            val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
-                        elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
-                            val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
-                        else:
-                            val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
-                        valores_capturados[metrica] = val
+            st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
+            metricas_pos = obtener_30_metricas(n_posicion)
             
-            if st.form_submit_button("Guardar Partido en Supabase"):
-                if n_jugador and supabase:
-                    goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
-                    asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
-                    tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
-                    pases_cap = int(valores_capturados.get("Pases Clave", 0))
-                    duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
-                    inter_cap = int(valores_capturados.get("Intercepciones", 0))
-                    
-                    stats_partido = {
-                        "jugador": n_jugador,
-                        "posicion": n_posicion,
-                        "liga": n_liga,
-                        "equipo": n_equipo,
-                        "jornada": n_jornada,
-                        "minutos": v_minutos,
-                        "goles": goles_cap,
-                        "asistencias": asis_cap,
-                        "tiros": tiros_cap,
-                        "pases_clave": pases_cap,
-                        "duelos_ganados": duelos_cap,
-                        "intercepciones": inter_cap,
-                        "m_data": valores_capturados
-                    }
-                    try:
-                        # Guardado rápido
-                        supabase.table('partidos_stats').insert(stats_partido).execute()
-                        st.cache_data.clear()
-                        st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
-                        st.rerun()
-                    except Exception as e:
-                        payload_base = {
-                            "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
-                            "equipo": n_equipo, "jornada": n_jornada, "minutos": v_minutos,
-                            "goles": goles_cap, "asistencias": asis_cap, "tiros": tiros_cap,
-                            "pases_clave": pases_cap, "duelos_ganados": duelos_cap, "intercepciones": inter_cap
+            valores_capturados = {}
+            with st.form("form_stats_dinamico"):
+                tabs_p = st.tabs(list(metricas_pos.keys()))
+                for i, (pilar, lista_m) in enumerate(metricas_pos.items()):
+                    with tabs_p[i]:
+                        cols = st.columns(4)
+                        for j, metrica in enumerate(lista_m):
+                            if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
+                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                                val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
+                            else:
+                                val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
+                            valores_capturados[metrica] = val
+                
+                if st.form_submit_button("Guardar Partido en Supabase"):
+                    if n_jugador and supabase:
+                        goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
+                        asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
+                        tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
+                        pases_cap = int(valores_capturados.get("Pases Clave", 0))
+                        duelos_cap = int(valores_capturados.get("Duelos Ganados", valores_capturados.get("1v1 Ganados %", 0)))
+                        inter_cap = int(valores_capturados.get("Intercepciones", 0))
+                        
+                        stats_partido = {
+                            "jugador": n_jugador,
+                            "posicion": n_posicion,
+                            "liga": n_liga,
+                            "equipo": n_equipo,
+                            "jornada": n_jornada,
+                            "minutos": v_minutos,
+                            "goles": goles_cap,
+                            "asistencias": asis_cap,
+                            "tiros": tiros_cap,
+                            "pases_clave": pases_cap,
+                            "duelos_ganados": duelos_cap,
+                            "intercepciones": inter_cap,
+                            "m_data": valores_capturados
                         }
                         try:
-                            supabase.table('partidos_stats').insert(payload_base).execute()
+                            supabase.table('partidos_stats').insert(stats_partido).execute()
                             st.cache_data.clear()
                             st.success(f"Estadísticas guardadas al instante para {n_jugador}.")
                             st.rerun()
-                        except Exception as ex:
-                            st.error(f"Error al escribir en Supabase: {ex}")
+                        except Exception as e:
+                            st.error(f"Error al escribir en Supabase: {e}")
+
+        # ---------------------------------------------------------
+        # PESTAÑA B: EDITAR / CORREGIR PARTIDO CARGADO
+        # ---------------------------------------------------------
+        with tab_edicion:
+            st.markdown("#### Corrección Quirúrgica de Partido Cargado")
+            
+            if todos_jugadores:
+                j_ed_sel = st.selectbox("Seleccionar Jugador para Corregir Partido:", todos_jugadores, key="j_ed_sel_k")
+                df_p_ed = consultar_partidos_jugador(j_ed_sel)
+                
+                if not df_p_ed.empty:
+                    partidos_lista_ed = [f"ID #{row['id']} - {row['jornada']} vs. {row['equipo']} ({row['liga']})" for _, row in df_p_ed.iterrows()]
+                    partido_ed_sel = st.selectbox("Seleccionar Partido a Corregir:", partidos_lista_ed, key="p_ed_sel_k")
+                    
+                    idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
+                    p_curr = df_p_ed.iloc[idx_p_ed]
+                    m_curr_custom = p_curr.get('m_data') if isinstance(p_curr.get('m_data'), dict) else {}
+                    
+                    st.info(f"Editando: **{p_curr['jornada']}** vs. **{p_curr['equipo']}** (ID de registro: #{p_curr['id']})")
+                    
+                    # Formulario pre-llenado con los valores actuales del partido
+                    pos_ed = p_curr['posicion']
+                    metricas_pos_ed = obtener_30_metricas(pos_ed)
+                    valores_corregidos = {}
+                    
+                    with st.form("form_corregir_partido"):
+                        ce1, ce2 = st.columns(2)
+                        min_corregidos = ce1.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
+                        
+                        tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
+                        for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
+                            with tabs_ed[i]:
+                                cols = st.columns(4)
+                                for j, metrica in enumerate(lista_m):
+                                    val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
+                                    if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                        val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}")
+                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                                        val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}")
+                                    else:
+                                        val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}")
+                                    valores_corregidos[metrica] = val_c
+                                    
+                        col_ed_b1, col_ed_b2 = st.columns(2)
+                        if col_ed_b1.form_submit_button("💾 Guardar Corrección del Partido"):
+                            if supabase and p_curr.get('id'):
+                                g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
+                                a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
+                                t_c = int(valores_corregidos.get("Tiros a Puerta", valores_corregidos.get("Tiros Totales", 0)))
+                                p_c = int(valores_corregidos.get("Pases Clave", 0))
+                                d_c = int(valores_corregidos.get("Duelos Ganados", valores_corregidos.get("1v1 Ganados %", 0)))
+                                i_c = int(valores_corregidos.get("Intercepciones", 0))
+                                
+                                payload_update = {
+                                    "minutos": min_corregidos,
+                                    "goles": g_c,
+                                    "asistencias": a_c,
+                                    "tiros": t_c,
+                                    "pases_clave": p_c,
+                                    "duelos_ganados": d_c,
+                                    "intercepciones": i_c,
+                                    "m_data": valores_corregidos
+                                }
+                                try:
+                                    supabase.table('partidos_stats').update(payload_update).eq('id', p_curr['id']).execute()
+                                    st.cache_data.clear()
+                                    st.success(f"Partido #{p_curr['id']} corregido con éxito.")
+                                    st.rerun()
+                                except Exception as e_up:
+                                    st.error(f"Error al actualizar: {e_up}")
+                                    
+                else:
+                    st.info("Este jugador no tiene partidos cargados para corregir.")
 
     else:
         st.info(f"Módulo '{opcion}' listo para sincronización.")

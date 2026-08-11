@@ -543,25 +543,32 @@ st.markdown("""
         object-position: center;
     }
     
-    .login-container { max-width: 420px; margin: 50px auto; padding: 40px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
+    .login-container { max-width: 440px; margin: 40px auto; padding: 30px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
     .metric-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-left: 4px solid #1A2B4C; padding: 12px; border-radius: 6px; margin-bottom: 10px; color: #1A2B4C; font-size: 13px; }
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; }
     .stButton>button:hover { background-color: #1A2B4C !important; color: #FFFFFF !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN
+# 7. SESIÓN Y NAVEGACIÓN (LOGIN REFORMADO)
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<div class='login-container'>", unsafe_allow_html=True)
-        col_img_1, col_img_2, col_img_3 = st.columns([1, 2, 1])
-        with col_img_2:
-            if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-            elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
-            else: st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
+        
+        # 📸 BÚSQUEDA EXCLUSIVA DE IMAGEN DE PORTADA / HERO PARA LOGIN
+        if os.path.exists("login_hero.png"):
+            st.image("login_hero.png", use_container_width=True)
+        elif os.path.exists("login_hero.jpg"):
+            st.image("login_hero.jpg", use_container_width=True)
+        elif os.path.exists("logo.png"):
+            st.image("logo.png", use_container_width=True)
+        elif os.path.exists("logo.jpg"):
+            st.image("logo.jpg", use_container_width=True)
+        else:
+            st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
         
         st.markdown("""
             <h2 style='color:#1A2B4C; margin-top:15px; margin-bottom:0; font-size:22px; text-align:center;'>SCOUTING PRO</h2>
@@ -569,12 +576,13 @@ if not st.session_state['logged_in']:
             <hr style='border-color:#E2E8F0; margin: 20px 0;'>
         """, unsafe_allow_html=True)
         
-        usuario = st.text_input("Usuario Corporativo")
-        password = st.text_input("Contraseña", type="password")
+        usuario = st.text_input("Usuario Corporativo", key="login_usr_txt")
+        password = st.text_input("Contraseña", type="password", key="login_pwd_txt")
         st.write("")
-        if st.button("INGRESAR AL SISTEMA"):
+        if st.button("INGRESAR AL SISTEMA", key="login_btn_submit"):
             if usuario.lower() == "christian" and password == "1234":
-                st.session_state['logged_in'] = True; st.rerun()
+                st.session_state['logged_in'] = True
+                st.rerun()
             else:
                 st.error("Credenciales incorrectas")
         st.markdown("</div>", unsafe_allow_html=True)

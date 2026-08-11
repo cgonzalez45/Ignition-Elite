@@ -44,8 +44,10 @@ def cargar_desde_supabase(tabla):
                         "Foto": row.get("foto")
                     }
                     if "valor" in row: elem["Valor"] = row.get("valor", "N/D")
-                    if "overall" in row: elem["Overall"] = row.get("overall", 70)
+                    if "nacionalidad" in row: elem["Nacionalidad"] = row.get("nacionalidad", "N/D")
+                    if "agencia" in row: elem["Agencia"] = row.get("agencia", "N/D")
                     if "viabilidad" in row: elem["Viabilidad"] = row.get("viabilidad", "🟡 Media")
+                    if "overall" in row: elem["Overall"] = row.get("overall", 70)
                     if "status" in row: elem["Status"] = row.get("status", "OBJETIVO 🔵")
                     registros.append(elem)
                 return registros
@@ -173,7 +175,7 @@ def calcular_valores_radar(nombre_jugador, posicion):
             pass
     return ejes, [70, 75, 65, 80, 72]
 
-# 5. DICCIONARIO COMPLETO DE LIGAS Y EQUIPOS 2026/2027 (CON REACTIVIDAD EN TIEMPO REAL)
+# 5. DICCIONARIO COMPLETO DE LIGAS Y EQUIPOS 2026/2027
 LIGAS_MUNDIALES = [
     "🇲🇽 Liga MX", "🇲🇽 Liga de Expansión", "🇲🇽 Liga MX U-21", "🇲🇽 Liga MX U-19", "🇲🇽 Liga MX U-17", "🇲🇽 Liga MX U-15",
     "🇪🇸 La Liga", "🇪🇸 Liga Hypermotion", "🇪🇸 Primera RFEF", "🇪🇸 Segunda RFEF",
@@ -183,7 +185,7 @@ LIGAS_MUNDIALES = [
     "🇳🇱 Eredivisie", "🇧🇪 Jupiler Pro League", "🇩🇰 Superliga Dinamarca", "🇵🇱 Ekstraklasa",
     "🇧🇬 efbet League Bulgaria", "🇭🇷 SuperSport HNL", "🇨🇿 Chance Liga", "🇷🇸 Superliga Serbia",
     "🇦TV Bundesliga Austria", "🇨🇭 Superliga de Suiza", "🇵🇹 Liga Portugal", "🇵🇹 Liga 2 Portugal",
-    "🇸🇰 Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
+    "🇸Kb Liga Eslovaquia", "🇸🇮 Liga Eslovenia",
     "🇦🇷 Primera División Argentina", "🇨🇷 Primera División Costa Rica", "🇨🇴 Primera División Colombia", 
     "🇧🇷 Brasileirao", "🇧🇷 Brasileirao Série B", "🇺🇾 Primera División Uruguay", "🇨🇱 Primera División Chile", 
     "🇺🇸 MLS", "🇺🇸 MLS Next Pro", "🇺🇸 USL", "🇯🇵 J-League"
@@ -210,7 +212,7 @@ EQUIPOS_POR_LIGA = {
     "🇦🇷 Primera División Argentina": ["Boca Juniors", "River Plate", "Racing Club", "Independiente", "San Lorenzo", "Vélez Sarsfield", "Estudiantes de La Plata", "Gimnasia La Plata", "Talleres de Córdoba", "Belgrano", "Rosario Central", "Newell's Old Boys", "Argentinos Juniors", "CA Huracán", "CA Lanús", "Godoy Cruz"]
 }
 
-# 6. MOSTRAR PERFIL
+# 6. MOSTRAR PERFIL DE JUGADOR CON FICHA EJECUTIVA EXTENDIDA
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"👤 Perfil Analítico: {jugador['Nombre']}")
@@ -228,7 +230,18 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         st.markdown(f"**Posición Específica:** {jugador['Posición']}")
         st.markdown(f"**Club:** {jugador['Club']} | **Liga:** {jugador.get('Liga', 'N/D')}")
         st.markdown(f"**Edad:** {jugador['Edad']}")
-        if 'Status' in jugador: st.markdown(f"**Status:** {jugador['Status']}")
+        
+        # DATOS MANUALES DE SCOUTING
+        if 'Nacionalidad' in jugador and jugador['Nacionalidad']:
+            st.markdown(f"**Nacionalidad:** {jugador['Nacionalidad']}")
+        if 'Valor' in jugador and jugador['Valor']:
+            st.markdown(f"**Valor de Mercado:** {jugador['Valor']}")
+        if 'Agencia' in jugador and jugador['Agencia']:
+            st.markdown(f"**Agencia:** {jugador['Agencia']}")
+        if 'Viabilidad' in jugador and jugador['Viabilidad']:
+            st.markdown(f"**Viabilidad:** {jugador['Viabilidad']}")
+        if 'Status' in jugador: 
+            st.markdown(f"**Status:** {jugador['Status']}")
         
     with col_radar:
         ejes_dinamicos, valores_dinamicos = calcular_valores_radar(jugador['Nombre'], jugador['Posición'])
@@ -262,7 +275,12 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
         pos_idx = LISTA_POSICIONES.index(jugador['Posición']) if jugador['Posición'] in LISTA_POSICIONES else 0
         nueva_pos = c_ed1.selectbox("Posición Específica", LISTA_POSICIONES, index=pos_idx, key=f"pos_{jugador['ID']}")
         
-        # SELECTOR DINÁMICO EN EDICIÓN
+        # CAMPOS DE FICHA MANUAL EN EDICIÓN
+        nueva_nac = c_ed1.text_input("Nacionalidad", value=jugador.get('Nacionalidad', ''), key=f"nac_{jugador['ID']}")
+        nuevo_val = c_ed2.text_input("Valor de Mercado", value=jugador.get('Valor', ''), key=f"val_{jugador['ID']}")
+        nueva_agencia = c_ed2.text_input("Agencia", value=jugador.get('Agencia', ''), key=f"ag_{jugador['ID']}")
+        nueva_viab = c_ed2.selectbox("Viabilidad", ["🟢 Alta", "🟡 Media", "🔴 Baja"], index=["🟢 Alta", "🟡 Media", "🔴 Baja"].index(jugador.get('Viabilidad', '🟡 Media')), key=f"via_{jugador['ID']}")
+        
         nueva_liga = c_ed2.selectbox("Liga", LIGAS_MUNDIALES, index=LIGAS_MUNDIALES.index(jugador.get('Liga', LIGAS_MUNDIALES[0])) if jugador.get('Liga') in LIGAS_MUNDIALES else 0, key=f"lg_edit_{jugador['ID']}")
         if nueva_liga in EQUIPOS_POR_LIGA:
             nuevo_club = c_ed2.selectbox("Club", EQUIPOS_POR_LIGA[nueva_liga], key=f"cl_edit_{jugador['ID']}")
@@ -276,7 +294,8 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             foto_base64 = procesar_foto(nueva_foto) if nueva_foto else jugador.get('Foto')
             payload = {
                 "nombre": nuevo_nom, "edad": nueva_edad, "posicion": nueva_pos,
-                "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64
+                "liga": nueva_liga, "club": nuevo_club, "foto": foto_base64,
+                "nacionalidad": nueva_nac, "valor": nuevo_val, "agencia": nueva_agencia, "viabilidad": nueva_viab
             }
             if supabase and jugador.get('ID'):
                 try:
@@ -379,12 +398,16 @@ else:
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
         
-        with st.expander("➕ Crear Nuevo Jugador en Base de Datos"):
-            # SELECTOR DE LIGA Y EQUIPO REACTIVO FUERA DEL FORM
+        with st.expander("➕ Crear Nuevo Jugador a Scoutear"):
             c_a, c_b = st.columns(2)
             reg_nom = c_a.text_input("Nombre Completo", key="reg_nom_input")
             reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
             reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
+            reg_nac = c_a.text_input("Nacionalidad (ej. 🇲🇽 Mexicana)", key="reg_nac_input")
+            
+            reg_val = c_b.text_input("Valor de Mercado (ej. €1.2M)", key="reg_val_input")
+            reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
+            reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["🟢 Alta", "🟡 Media", "🔴 Baja"], key="reg_viab_input")
             
             reg_liga = c_b.selectbox("Liga", LIGAS_MUNDIALES, key="reg_liga_dyn")
             if reg_liga in EQUIPOS_POR_LIGA:
@@ -400,7 +423,7 @@ else:
                     payload = {
                         "nombre": reg_nom, "edad": reg_edad, "posicion": reg_pos,
                         "liga": reg_liga, "club": reg_club, "foto": f_b64,
-                        "valor": "N/D", "overall": 70, "viabilidad": "🟡 Media"
+                        "nacionalidad": reg_nac, "valor": reg_val, "agencia": reg_ag, "viabilidad": reg_viab, "overall": 70
                     }
                     try:
                         supabase.table('scouting_db').insert(payload).execute()
@@ -411,7 +434,7 @@ else:
 
         if len(st.session_state['scouting_db']) > 0:
             df_scouting = pd.DataFrame(st.session_state['scouting_db'])
-            seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Overall", "Posición"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
+            seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Posición", "Viabilidad"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
             
             if len(seleccion.selection.rows) > 0:
                 mostrar_perfil_jugador(st.session_state['scouting_db'][seleccion.selection.rows[0]], 'scouting_db', seleccion.selection.rows[0])
@@ -462,7 +485,6 @@ else:
         n_jugador = c1.text_input("Nombre del Jugador", key="p_nom_input")
         n_posicion = c1.selectbox("📍 Posición Específica", LISTA_POSICIONES, key="p_pos_input")
         
-        # SELECTOR DE LIGA Y EQUIPO REACTIVO FUERA DEL FORM EN PARTIDOS
         n_liga = c2.selectbox("🏆 Competición", LIGAS_MUNDIALES, key="p_liga_dyn")
         if n_liga in EQUIPOS_POR_LIGA:
             n_equipo = c2.selectbox("🛡️ Equipo (2026/2027)", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")

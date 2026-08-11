@@ -557,7 +557,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (LOGIN DIRECTO SIN 2FA)
+# 7. SESIÓN Y NAVEGACIÓN
 if 'logged_in' not in st.session_state: 
     st.session_state['logged_in'] = False
     st.session_state['role'] = 'viewer'
@@ -845,47 +845,49 @@ else:
                         
                         idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
                         p_curr = df_p_ed.iloc[idx_p_ed]
+                        p_id = p_curr['id']
                         m_curr_custom = p_curr.get('m_data') if isinstance(p_curr.get('m_data'), dict) else {}
                         
-                        st.info(f"Editando Registro ID **#{p_curr['id']}** de **{j_ed_sel}**")
+                        st.info(f"Editando Registro ID **#{p_id}** de **{j_ed_sel}**")
                         
                         pos_ed = p_curr['posicion']
                         metricas_pos_ed = obtener_30_metricas(pos_ed)
-                        valores_corregidos = {}
+                        
+                        # --- SELECTORES DINÁMICOS FUERA DEL FORM ---
+                        st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
+                        med_c1, med_c2 = st.columns(2)
                         
                         j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
                         j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
+                        ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key=f"ed_jornada_{p_id}")
                         
                         l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
                         l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
+                        ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key=f"ed_liga_sel_{p_id}")
                         
-                        with st.form("form_corregir_partido_completo"):
-                            st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
-                            med_c1, med_c2 = st.columns(2)
-                            
-                            ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key="ed_jornada_k")
-                            ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
-                            
-                            if "Copa Doméstica" in ed_liga_sel:
-                                ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key="ed_liga_copa_txt")
-                            else:
-                                ed_liga = ed_liga_sel
+                        if "Copa Doméstica" in ed_liga_sel:
+                            ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key=f"ed_liga_copa_{p_id}")
+                        else:
+                            ed_liga = ed_liga_sel
 
-                            if ed_liga in EQUIPOS_POR_LIGA:
-                                eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
-                                e_curr_val = p_curr.get('equipo', eq_opciones[0])
-                                e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
-                                ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key="ed_equipo_k")
-                            else:
-                                ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
-                                
-                            ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
+                        if ed_liga in EQUIPOS_POR_LIGA:
+                            eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
+                            e_curr_val = p_curr.get('equipo', eq_opciones[0])
+                            e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
+                            ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key=f"ed_equipo_{p_id}_{ed_liga}")
+                        else:
+                            ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key=f"ed_equipo_txt_{p_id}")
                             
-                            st.markdown("##### 🎬 2. Adjuntar / Actualizar Clip de Video del Partido")
-                            v_tit_prev = m_curr_custom.get("video_titulo", "")
-                            v_tit_ed = st.text_input("Título del Video", value=v_tit_prev, key=f"ed_v_tit_{p_curr['id']}")
-                            v_arch_ed = st.file_uploader("Subir / Reemplazar Clip de Video (MP4 / MOV)", type=['mp4', 'mov'], key=f"ed_v_file_{p_curr['id']}")
+                        ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key=f"min_ed_val_{p_id}")
+                        
+                        st.markdown("##### 🎬 2. Adjuntar / Actualizar Clip de Video del Partido")
+                        v_tit_prev = m_curr_custom.get("video_titulo", "")
+                        v_tit_ed = st.text_input("Título del Video", value=v_tit_prev, key=f"ed_v_tit_{p_id}")
+                        v_arch_ed = st.file_uploader("Subir / Reemplazar Clip de Video (MP4 / MOV)", type=['mp4', 'mov'], key=f"ed_v_file_{p_id}")
 
+                        # --- FORMULARIO PARA MÉTRICAS Y BOTONES ---
+                        valores_corregidos = {}
+                        with st.form(f"form_corregir_partido_{p_id}"):
                             st.markdown("##### 3. Corrección de Métricas Tácticas")
                             tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
                             for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
@@ -894,11 +896,11 @@ else:
                                     for j, metrica in enumerate(lista_m):
                                         val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
                                         if "xG Evitados" in metrica or "Diferencia" in metrica:
-                                            val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}")
+                                            val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
                                         elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
-                                            val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}")
+                                            val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
                                         else:
-                                            val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}")
+                                            val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
                                         valores_corregidos[metrica] = val_c
                                         
                             col_ed_b1, col_ed_b2 = st.columns(2)
@@ -906,7 +908,7 @@ else:
                             btn_borrar = col_ed_b2.form_submit_button("🗑️ ELIMINAR ESTE PARTIDO")
                             
                             if btn_guardar:
-                                if supabase and p_curr.get('id'):
+                                if supabase and p_id:
                                     g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
                                     a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
                                     t_c = int(valores_corregidos.get("Tiros a Puerta", valores_corregidos.get("Tiros Totales", 0)))
@@ -939,19 +941,19 @@ else:
                                         "m_data": valores_corregidos
                                     }
                                     try:
-                                        supabase.table('partidos_stats').update(payload_update).eq('id', p_curr['id']).execute()
+                                        supabase.table('partidos_stats').update(payload_update).eq('id', p_id).execute()
                                         st.cache_data.clear()
-                                        st.success(f"Partido #{p_curr['id']} actualizado correctamente.")
+                                        st.success(f"Partido #{p_id} actualizado correctamente.")
                                         st.rerun()
                                     except Exception as e_up:
                                         st.error(f"Error al actualizar: {e_up}")
 
                             if btn_borrar:
-                                if supabase and p_curr.get('id'):
+                                if supabase and p_id:
                                     try:
-                                        supabase.table('partidos_stats').delete().eq('id', p_curr['id']).execute()
+                                        supabase.table('partidos_stats').delete().eq('id', p_id).execute()
                                         st.cache_data.clear()
-                                        st.success(f"Partido #{p_curr['id']} eliminado permanentemente de Supabase.")
+                                        st.success(f"Partido #{p_id} eliminado permanentemente de Supabase.")
                                         st.rerun()
                                     except Exception as e_del:
                                         st.error(f"Error al eliminar: {e_del}")

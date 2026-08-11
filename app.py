@@ -146,7 +146,6 @@ def consultar_partidos_jugador(nombre_jugador):
             pass
     return pd.DataFrame()
 
-# FUNCIÓN AUXILIAR PARA CALCULAR PROMEDIOS P/90 DE TODAS LAS MÉTRICAS
 def calcular_promedios_df(df_input):
     if df_input.empty:
         return {}, 0, 0
@@ -160,11 +159,9 @@ def calcular_promedios_df(df_input):
     promedios = {}
     sumas = {}
     
-    # Recorrer filas y acumular
     for _, row in df_input.iterrows():
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
-        # Mapear métricas de la columna JSON m_data
         for k, v in m_custom.items():
             try:
                 val_f = float(v)
@@ -172,7 +169,6 @@ def calcular_promedios_df(df_input):
             except Exception:
                 pass
                 
-        # Campos nativos de respaldo
         sumas["Goles Totales"] = sumas.get("Goles Totales", 0.0) + float(row.get('goles', 0) or 0)
         sumas["Asistencias Directas"] = sumas.get("Asistencias Directas", 0.0) + float(row.get('asistencias', 0) or 0)
         sumas["Tiros a Puerta"] = sumas.get("Tiros a Puerta", 0.0) + float(row.get('tiros', 0) or 0)
@@ -180,7 +176,6 @@ def calcular_promedios_df(df_input):
         sumas["Duelos Ganados"] = sumas.get("Duelos Ganados", 0.0) + float(row.get('duelos_ganados', 0) or 0)
         sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
 
-    # Convertir a p/90 o promedio de porcentaje
     for k, total_val in sumas.items():
         if "%" in k:
             promedios[k] = round(total_val / tot_partidos, 1)
@@ -189,7 +184,7 @@ def calcular_promedios_df(df_input):
             
     return promedios, tot_partidos, tot_min
 
-# 4. TODAS LAS LIGAS MUNDIALES
+# 4. LIGAS MUNDIALES
 LIGAS_MUNDIALES = [
     "Liga MX", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
     "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
@@ -226,7 +221,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL CON CÁLCULO REAL P/90
+# 5. MOSTRAR PERFIL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -263,7 +258,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             st.markdown(f"**Agencia / Representante:** {ag_val}")
             st.markdown(f"**Estatus:** {jugador.get('Status', 'OBJETIVO')}")
 
-    # TAB 2: RENDIMIENTO & DATA (PROMEDIOS REALES CALCULADOS)
+    # TAB 2: RENDIMIENTO & DATA
     with pestanas_principales[1]:
         st.markdown("### Centro de Análisis Estadístico")
         sub_vistas = st.tabs(["Compendio General (p/90)", "Promedio por Torneo", "Ficha de Partido Único"])
@@ -273,7 +268,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
             promedios_gen, tot_p, tot_m = calcular_promedios_df(df_partidos)
             c_rad, c_mat = st.columns([1.2, 2.8])
             
-            # Radar dinámico ajustado
             val_radar = [70, 75, 65, 80, 72]
             if tot_m > 0:
                 g_p = promedios_gen.get("Goles Totales", 0.0)
@@ -644,7 +638,7 @@ else:
     elif opcion == "Ingreso de Data (Partidos)":
         st.title("Registro Manual de Estadísticas de Partido")
         
-        tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir Partido Cargado"])
+        tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir / Borrar Partido Cargado"])
         
         todos_jugadores = []
         if 'scouting_db' in st.session_state:
@@ -722,32 +716,54 @@ else:
                         except Exception as e:
                             st.error(f"Error al escribir en Supabase: {e}")
 
-        # PESTAÑA B: EDITAR / CORREGIR PARTIDO CARGADO
+        # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO (CON METADATOS EDITABLES)
         with tab_edicion:
-            st.markdown("#### Corrección Quirúrgica de Partido Cargado")
+            st.markdown("#### Corrección de Metadatos y Métricas de Partido Cargado")
             
             if todos_jugadores:
-                j_ed_sel = st.selectbox("Seleccionar Jugador para Corregir Partido:", todos_jugadores, key="j_ed_sel_k")
+                j_ed_sel = st.selectbox("Seleccionar Jugador para Administrar Partidos:", todos_jugadores, key="j_ed_sel_k")
                 df_p_ed = consultar_partidos_jugador(j_ed_sel)
                 
                 if not df_p_ed.empty:
                     partidos_lista_ed = [f"ID #{row['id']} - {row['jornada']} vs. {row['equipo']} ({row['liga']})" for _, row in df_p_ed.iterrows()]
-                    partido_ed_sel = st.selectbox("Seleccionar Partido a Corregir:", partidos_lista_ed, key="p_ed_sel_k")
+                    partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
                     
                     idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
                     p_curr = df_p_ed.iloc[idx_p_ed]
                     m_curr_custom = p_curr.get('m_data') if isinstance(p_curr.get('m_data'), dict) else {}
                     
-                    st.info(f"Editando: **{p_curr['jornada']}** vs. **{p_curr['equipo']}** (ID de registro: #{p_curr['id']})")
+                    st.info(f"Editando Registro ID **#{p_curr['id']}** de **{j_ed_sel}**")
                     
                     pos_ed = p_curr['posicion']
                     metricas_pos_ed = obtener_30_metricas(pos_ed)
                     valores_corregidos = {}
                     
-                    with st.form("form_corregir_partido"):
-                        ce1, ce2 = st.columns(2)
-                        min_corregidos = ce1.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
+                    # CÁLCULO DE ÍNDICES DE METADATOS PARA VALORES PREVIOS
+                    jornadas_opciones = [f"Jornada {i}" for i in range(1, 39)] + ["Fase de Grupos", "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"]
+                    j_curr_val = p_curr.get('jornada', 'Jornada 1')
+                    j_idx = jornadas_opciones.index(j_curr_val) if j_curr_val in jornadas_opciones else 0
+                    
+                    l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
+                    l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
+                    
+                    with st.form("form_corregir_partido_completo"):
+                        st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
+                        med_c1, med_c2 = st.columns(2)
                         
+                        ed_jornada = med_c1.selectbox("Jornada / Fase", jornadas_opciones, index=j_idx, key="ed_jornada_k")
+                        ed_liga = med_c2.selectbox("Competición (Liga)", LIGAS_MUNDIALES, index=l_idx, key="ed_liga_k")
+                        
+                        if ed_liga in EQUIPOS_POR_LIGA:
+                            eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
+                            e_curr_val = p_curr.get('equipo', eq_opciones[0])
+                            e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
+                            ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key="ed_equipo_k")
+                        else:
+                            ed_equipo = med_c1.text_input("Equipo Rival", value=p_curr.get('equipo', ''), key="ed_equipo_txt_k")
+                            
+                        ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key="min_ed_val")
+                        
+                        st.markdown("##### 2. Corrección de Métricas Tácticas")
                         tabs_ed = st.tabs(list(metricas_pos_ed.keys()))
                         for i, (pilar, lista_m) in enumerate(metricas_pos_ed.items()):
                             with tabs_ed[i]:
@@ -763,7 +779,10 @@ else:
                                     valores_corregidos[metrica] = val_c
                                     
                         col_ed_b1, col_ed_b2 = st.columns(2)
-                        if col_ed_b1.form_submit_button("💾 Guardar Corrección del Partido"):
+                        btn_guardar = col_ed_b1.form_submit_button("💾 Guardar Corrección Completa")
+                        btn_borrar = col_ed_b2.form_submit_button("🗑️ ELIMINAR ESTE PARTIDO")
+                        
+                        if btn_guardar:
                             if supabase and p_curr.get('id'):
                                 g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
                                 a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
@@ -773,7 +792,10 @@ else:
                                 i_c = int(valores_corregidos.get("Intercepciones", 0))
                                 
                                 payload_update = {
-                                    "minutos": min_corregidos,
+                                    "jornada": ed_jornada,
+                                    "liga": ed_liga,
+                                    "equipo": ed_equipo,
+                                    "minutos": ed_minutos,
                                     "goles": g_c,
                                     "asistencias": a_c,
                                     "tiros": t_c,
@@ -785,13 +807,23 @@ else:
                                 try:
                                     supabase.table('partidos_stats').update(payload_update).eq('id', p_curr['id']).execute()
                                     st.cache_data.clear()
-                                    st.success(f"Partido #{p_curr['id']} corregido con éxito.")
+                                    st.success(f"Partido #{p_curr['id']} actualizado correctamente.")
                                     st.rerun()
                                 except Exception as e_up:
                                     st.error(f"Error al actualizar: {e_up}")
+
+                        if btn_borrar:
+                            if supabase and p_curr.get('id'):
+                                try:
+                                    supabase.table('partidos_stats').delete().eq('id', p_curr['id']).execute()
+                                    st.cache_data.clear()
+                                    st.success(f"Partido #{p_curr['id']} eliminado permanentemente de Supabase.")
+                                    st.rerun()
+                                except Exception as e_del:
+                                    st.error(f"Error al eliminar: {e_del}")
                                     
                 else:
-                    st.info("Este jugador no tiene partidos cargados para corregir.")
+                    st.info("Este jugador no tiene partidos cargados para corregir o borrar.")
 
     else:
         st.info(f"Módulo '{opcion}' listo para sincronización.")

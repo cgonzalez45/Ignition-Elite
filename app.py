@@ -540,8 +540,12 @@ st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     
-    [data-testid="stHeader"] { display: none !important; }
-    .block-container { padding-top: 3rem !important; }
+    /* Muestra la barra superior de forma transparente para permitir desplegar el menú en móviles */
+    [data-testid="stHeader"] { background-color: transparent !important; }
+    #MainMenu { visibility: hidden; }
+    footer { visibility: hidden; }
+    
+    .block-container { padding-top: 2rem !important; }
     
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
@@ -853,7 +857,6 @@ else:
                         pos_ed = p_curr['posicion']
                         metricas_pos_ed = obtener_30_metricas(pos_ed)
                         
-                        # --- SELECTORES DINÁMICOS FUERA DEL FORM ---
                         st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
                         med_c1, med_c2 = st.columns(2)
                         
@@ -885,7 +888,6 @@ else:
                         v_tit_ed = st.text_input("Título del Video", value=v_tit_prev, key=f"ed_v_tit_{p_id}")
                         v_arch_ed = st.file_uploader("Subir / Reemplazar Clip de Video (MP4 / MOV)", type=['mp4', 'mov'], key=f"ed_v_file_{p_id}")
 
-                        # --- FORMULARIO PARA MÉTRICAS Y BOTONES ---
                         valores_corregidos = {}
                         with st.form(f"form_corregir_partido_{p_id}"):
                             st.markdown("##### 3. Corrección de Métricas Tácticas")

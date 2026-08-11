@@ -182,7 +182,7 @@ EQUIPOS_POR_LIGA = {
     "MLS": ["Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"]
 }
 
-# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO CONTRA ERRORES DE TIPO
+# 5. MOSTRAR PERFIL SOBRIO Y PROTEGIDO
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     st.markdown("---")
     st.subheader(f"Perfil Analítico: {jugador['Nombre']}")
@@ -346,7 +346,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
                 
-                # Extraer mapa de métricas m_data si existe
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
 
                 st.markdown("#### Matriz de Acciones Reales del Partido (Conteos Absolutos)")
@@ -446,7 +445,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 except Exception as e:
                     st.error(f"Error al eliminar: {e}")
 
-# 6. ESTÉTICA
+# 6. ESTÉTICA SOBRIA Y CORPORATIVA
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
@@ -618,7 +617,6 @@ else:
         
         c1, c2 = st.columns(2)
         
-        # 1. Lista de jugadores dinámicos
         todos_jugadores = []
         if 'scouting_db' in st.session_state:
             todos_jugadores += [j['Nombre'] for j in st.session_state['scouting_db']]
@@ -642,7 +640,7 @@ else:
         n_jornada = c1.selectbox("Jornada / Fase", [f"Jornada {i}" for i in range(1, 39)], key="p_jornada_input")
         v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
 
-        # FORMULARIO ADAPTATIVO A LAS 30 MÉTRICAS DE LA POSICIÓN SELECCIONADA
+        # FORMULARIO ADAPTATIVO CON SOPORTE DE VALORES NEGATIVOS
         st.markdown(f"#### Captura de Métricas para: **{n_posicion}**")
         metricas_pos = obtener_30_metricas(n_posicion)
         
@@ -653,8 +651,10 @@ else:
                 with tabs_p[i]:
                     cols = st.columns(4)
                     for j, metrica in enumerate(lista_m):
-                        # Detectar si es porcentaje o flotante
-                        if "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
+                        # xG Evitados y métricas avanzadas permiten valores negativos
+                        if "xG Evitados" in metrica or "Diferencia" in metrica:
+                            val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
+                        elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica:
                             val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
                         else:
                             val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
@@ -662,7 +662,6 @@ else:
             
             if st.form_submit_button("Guardar Partido en Supabase"):
                 if n_jugador and supabase:
-                    # Mapeo de compatibilidad base
                     goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
                     asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
                     tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
@@ -689,7 +688,6 @@ else:
                         supabase.table('partidos_stats').insert(stats_partido).execute()
                         st.success(f"Estadísticas de {n_posicion} guardadas exitosamente para {n_jugador}.")
                     except Exception as e:
-                        # Respaldo si no está la columna JSON
                         payload_base = {
                             "jugador": n_jugador, "posicion": n_posicion, "liga": n_liga,
                             "equipo": n_equipo, "jornada": n_jornada, "minutos": v_minutos,

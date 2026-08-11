@@ -146,6 +146,10 @@ def consultar_partidos_jugador(nombre_jugador):
             pass
     return pd.DataFrame()
 
+# ==============================================================
+# MOTOR MATEMÁTICO V41.0: "DATO DURO" + CANDADOS DE COHERENCIA
+# Cero extrapolaciones irreales. Realidad pura (Promedio p/P).
+# ==============================================================
 def calcular_promedios_df(df_input):
     if df_input.empty:
         return {}, 0, 0
@@ -162,6 +166,7 @@ def calcular_promedios_df(df_input):
     for _, row in df_input.iterrows():
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
+        # 1. Suma pura de la matriz de captura (Evita duplicación)
         for k, v in m_custom.items():
             try:
                 val_f = float(v)
@@ -169,19 +174,38 @@ def calcular_promedios_df(df_input):
             except Exception:
                 pass
                 
-        sumas["Goles Totales"] = sumas.get("Goles Totales", 0.0) + float(row.get('goles', 0) or 0)
-        sumas["Asistencias Directas"] = sumas.get("Asistencias Directas", 0.0) + float(row.get('asistencias', 0) or 0)
-        sumas["Tiros a Puerta"] = sumas.get("Tiros a Puerta", 0.0) + float(row.get('tiros', 0) or 0)
-        sumas["Pases Clave"] = sumas.get("Pases Clave", 0.0) + float(row.get('pases_clave', 0) or 0)
-        sumas["Duelos Ganados"] = sumas.get("Duelos Ganados", 0.0) + float(row.get('duelos_ganados', 0) or 0)
-        sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
+        # 2. Respaldo para históricos SOLO si no existen en matriz (Filtro Anti-Doble Suma)
+        if "Goles Totales" not in m_custom and "Goles Anotados" not in m_custom:
+            sumas["Goles Totales"] = sumas.get("Goles Totales", 0.0) + float(row.get('goles', 0) or 0)
+        if "Asistencias Directas" not in m_custom and "Asistencias Totales" not in m_custom:
+            sumas["Asistencias Directas"] = sumas.get("Asistencias Directas", 0.0) + float(row.get('asistencias', 0) or 0)
+        if "Tiros a Puerta" not in m_custom and "Tiros Totales" not in m_custom:
+            sumas["Tiros a Puerta"] = sumas.get("Tiros a Puerta", 0.0) + float(row.get('tiros', 0) or 0)
+        if "Pases Clave" not in m_custom:
+            sumas["Pases Clave"] = sumas.get("Pases Clave", 0.0) + float(row.get('pases_clave', 0) or 0)
+        if "Duelos Ganados" not in m_custom and "1v1 Ganados %" not in m_custom:
+            sumas["Duelos Ganados"] = sumas.get("Duelos Ganados", 0.0) + float(row.get('duelos_ganados', 0) or 0)
+        if "Intercepciones" not in m_custom:
+            sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
 
+    # 3. CÁLCULO DE PROMEDIO POR PARTIDO JUGADO (REALIDAD)
     for k, total_val in sumas.items():
-        if "%" in k:
-            promedios[k] = round(total_val / tot_partidos, 1)
+        if "%" in k or "Velocidad" in k:
+            promedios[k] = round(total_val / tot_partidos, 1) # Porcentajes y km/h puros
+        elif "Minutos" in k:
+            promedios[k] = round(total_val / tot_partidos, 0)
         else:
-            promedios[k] = round((total_val / tot_min) * 90, 2)
-            
+            promedios[k] = round(total_val / tot_partidos, 2) # Acciones crudas promediadas
+
+    # 4. CANDADOS DE COHERENCIA LÓGICA (SANITY CHECKS)
+    # Candado A: Los Goles no pueden ser mayores a los Tiros a Puerta
+    if promedios.get("Goles Totales", 0) > promedios.get("Tiros a Puerta", 0):
+        promedios["Tiros a Puerta"] = promedios["Goles Totales"]
+        
+    # Candado B: Los Tiros a Puerta no pueden ser mayores a los Tiros Totales
+    if promedios.get("Tiros a Puerta", 0) > promedios.get("Tiros Totales", promedios.get("Tiros a Puerta", 0)):
+        promedios["Tiros Totales"] = promedios["Tiros a Puerta"]
+        
     return promedios, tot_partidos, tot_min
 
 # 4. LIGAS MUNDIALES E INTERNACIONALES
@@ -294,7 +318,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
     # TAB 2: RENDIMIENTO & DATA
     with pestanas_principales[1]:
         st.markdown("### Centro de Análisis Estadístico")
-        sub_vistas = st.tabs(["Compendio General (p/90)", "Promedio por Torneo", "Ficha de Partido Único"])
+        sub_vistas = st.tabs(["Compendio General (Promedio por Partido)", "Promedio por Torneo", "Ficha de Partido Único"])
         
         with sub_vistas[0]:
             promedios_gen, tot_p, tot_m = calcular_promedios_df(df_partidos)
@@ -329,7 +353,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 st.pyplot(fig, use_container_width=True)
                 
             with c_mat:
-                st.markdown(f"#### Matriz Quirúrgica p/90 (Basada en {tot_p} partidos cargados)")
+                st.markdown(f"#### Matriz Quirúrgica (Dato Duro por Partido - p/P)")
                 metricas_q = obtener_30_metricas(jugador['Posición'])
                 m_tabs = st.tabs(list(metricas_q.keys()))
                 for i, (pilar, lista_m) in enumerate(metricas_q.items()):
@@ -337,8 +361,9 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                         cols = st.columns(4)
                         for j, metrica in enumerate(lista_m):
                             val_calculado = promedios_gen.get(metrica, 0.0)
-                            unit = "%" if "%" in metrica else "p/90"
-                            cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado} {unit}</span></div>", unsafe_allow_html=True)
+                            # Etiqueta adaptada: Porcentajes, km/h o Promedio por Partido (p/P)
+                            unit = "%" if "%" in metrica else (" km/h" if "Velocidad" in metrica else ("" if "Minutos" in metrica else " p/P"))
+                            cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado}{unit}</span></div>", unsafe_allow_html=True)
 
         with sub_vistas[1]:
             if not df_partidos.empty and 'liga' in df_partidos.columns:
@@ -371,7 +396,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                     st.pyplot(fig, use_container_width=True)
                     
                 with c_mat_t:
-                    st.markdown(f"#### Promedios p/90 en {torneo_sel}")
+                    st.markdown(f"#### Promedios Reales (p/P) en {torneo_sel}")
                     metricas_q = obtener_30_metricas(jugador['Posición'])
                     m_tabs_t = st.tabs(list(metricas_q.keys()))
                     for i, (pilar, lista_m) in enumerate(metricas_q.items()):
@@ -379,8 +404,8 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                             cols = st.columns(4)
                             for j, metrica in enumerate(lista_m):
                                 val_calc_t = promedios_torneo.get(metrica, 0.0)
-                                unit_t = "%" if "%" in metrica else "p/90"
-                                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calc_t} {unit_t}</span></div>", unsafe_allow_html=True)
+                                unit_t = "%" if "%" in metrica else (" km/h" if "Velocidad" in metrica else ("" if "Minutos" in metrica else " p/P"))
+                                cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calc_t}{unit_t}</span></div>", unsafe_allow_html=True)
             else:
                 st.info("No hay partidos registrados para filtrar por competición. Registra partidos en 'Ingreso de Data'.")
 
@@ -550,7 +575,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 7. SESIÓN Y NAVEGACIÓN (LOGIN REFORMADO)
+# 7. SESIÓN Y NAVEGACIÓN (LOGIN HERO INDEPENDIENTE)
 if 'logged_in' not in st.session_state: st.session_state['logged_in'] = False
 
 if not st.session_state['logged_in']:
@@ -589,6 +614,7 @@ if not st.session_state['logged_in']:
 
 else:
     with st.sidebar:
+        # LOGO ORIGINAL Y SEPARADO PARA EL MENÚ
         if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
         elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
         else: st.markdown("<h2 style='color:#C8A165; text-align:center;'>IGNITION ELITE</h2>", unsafe_allow_html=True)

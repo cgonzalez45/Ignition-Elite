@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import math
 import os
 import base64
-import datetime
 
 from supabase import create_client, Client
 
@@ -66,7 +65,7 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS POR ROL
+# 3. POSICIONES Y MÉTRICAS POR ROL (CON VELOCIDAD MÁXIMA PARA CAMPO)
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
@@ -172,7 +171,7 @@ def calcular_promedios_df(df_input):
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
         for k, v in m_custom.items():
-            if k in ["video_clip", "video_titulo", "estatus_participacion", "fecha", "marcador"]: continue
+            if k in ["video_clip", "video_titulo", "estatus_participacion"]: continue
             try:
                 val_f = float(v)
                 sumas[k] = sumas.get(k, 0.0) + val_f
@@ -416,17 +415,12 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
                 e_part = m_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
 
-                f_val = p_data.get('fecha') or m_custom.get('fecha', 'N/D')
-                m_val = p_data.get('marcador') or m_custom.get('marcador', 'N/D')
-
-                header_text = f"Ficha Táctica: **{p_data['jornada']}** | **Fecha:** {f_val} | **Marcador:** {m_val} | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**"
-
                 if "Sin Participación" in e_part:
-                    st.warning(f"{header_text} — **(SIN PARTICIPACIÓN / BANCA)**")
+                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: SIN PARTICIPACIÓN (EN BANCA)**")
                 elif "No Convocado" in e_part:
-                    st.error(f"{header_text} — **(NO CONVOCADO)**")
+                    st.error(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: NO CONVOCADO**")
                 else:
-                    st.success(header_text)
+                    st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
 
                 video_data = m_custom.get("video_clip")
                 video_titulo = m_custom.get("video_titulo", "Clip de la Acción")
@@ -774,9 +768,6 @@ else:
                     
                 n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
                 
-                n_fecha = c1.date_input("Fecha del Partido", value=datetime.date.today(), key="p_fecha_input")
-                n_marcador = c2.text_input("Marcador Final (ej. 2 - 1)", value="0 - 0", key="p_marcador_input")
-                
                 n_liga_sel = c2.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
                 if "Copa Doméstica" in n_liga_sel:
                     n_liga = c2.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
@@ -829,8 +820,6 @@ else:
                     if st.form_submit_button("Guardar Partido en Supabase"):
                         if n_jugador and supabase:
                             valores_capturados["estatus_participacion"] = estatus_part
-                            valores_capturados["fecha"] = str(n_fecha)
-                            valores_capturados["marcador"] = n_marcador
                             
                             goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
                             asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
@@ -849,8 +838,6 @@ else:
                                 "liga": n_liga,
                                 "equipo": n_equipo,
                                 "jornada": n_jornada,
-                                "fecha": str(n_fecha),
-                                "marcador": n_marcador,
                                 "minutos": v_minutos,
                                 "goles": goles_cap,
                                 "asistencias": asis_cap,
@@ -890,17 +877,8 @@ else:
                         pos_ed = p_curr['posicion']
                         metricas_pos_ed = obtener_30_metricas(pos_ed)
                         
-                        st.markdown("##### 1. Corrección de Contexto (Fecha, Marcador, Jornada, Torneo y Rival)")
+                        st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
                         med_c1, med_c2 = st.columns(2)
-                        
-                        f_curr_val = p_curr.get('fecha') or m_curr_custom.get('fecha', str(datetime.date.today()))
-                        try:
-                            f_date_obj = datetime.datetime.strptime(str(f_curr_val), "%Y-%m-%d").date()
-                        except Exception:
-                            f_date_obj = datetime.date.today()
-                            
-                        ed_fecha = med_c1.date_input("Fecha del Partido", value=f_date_obj, key=f"ed_fecha_{p_id}")
-                        ed_marcador = med_c2.text_input("Marcador Final (ej. 2 - 1)", value=str(p_curr.get('marcador') or m_curr_custom.get('marcador', '0 - 0')), key=f"ed_marcador_{p_id}")
                         
                         j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
                         j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
@@ -967,8 +945,6 @@ else:
                             if btn_guardar:
                                 if supabase and p_id:
                                     valores_corregidos["estatus_participacion"] = ed_estatus_part
-                                    valores_corregidos["fecha"] = str(ed_fecha)
-                                    valores_corregidos["marcador"] = ed_marcador
                                     
                                     g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
                                     a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
@@ -990,8 +966,6 @@ else:
                                     
                                     payload_update = {
                                         "jornada": ed_jornada,
-                                        "fecha": str(ed_fecha),
-                                        "marcador": ed_marcador,
                                         "liga": ed_liga,
                                         "equipo": ed_equipo,
                                         "minutos": ed_minutos,

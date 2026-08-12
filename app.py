@@ -65,7 +65,7 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y LAS 30 MÉTRICAS COMPLETAS POR ROL
+# 3. POSICIONES Y MÉTRICAS POR ROL (CON VELOCIDAD MÁXIMA PARA CAMPO)
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
@@ -85,28 +85,28 @@ def obtener_30_metricas(posicion):
             "Pilar 1: Defensa Pura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Tiro", "Despejes Totales", "Recuperaciones de Balón", "Duelos 1v1 Ganados %", "Faltas Cometidas"],
             "Pilar 2: Juego Aéreo (7)": ["Duelos Aéreos Totales", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Despejes de Cabeza", "Aéreos en Área Rival", "Aéreos en Área Propia", "Faltas Recibidas por Alto"],
             "Pilar 3: Salida y Posesión (8)": ["Pases Precisos %", "Pases Progresivos", "Pases Largos Precisos %", "Conducciones Progresivas", "Pases al Tercio Final", "Toques Totales", "Pérdidas de Balón", "Pases bajo Presión"],
-            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints", "Distancia Recorrida (km)", "Aceleraciones"]
+            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints", "Distancia Recorrida (km)", "Aceleraciones", "Velocidad Máxima (km/h)"]
         }
     elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
         return {
             "Pilar 1: Cobertura Defensiva (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Centro", "Recuperaciones tras Pérdida", "Despejes", "Duelos Aéreos Ganados %"],
             "Pilar 2: Progresión y Posesión (8)": ["Pases Progresivos", "Conducciones Progresivas", "Pases al Tercio Final", "Pases al Espacio", "Toques Totales", "Pérdidas en Salida", "Pases Precisos %", "Pases Recibidos"],
             "Pilar 3: Aporte Ofensivo (8)": ["Centros Precisos %", "Asistencias Esperadas (xA)", "Desbordes Exitosos", "Toques en Área Rival", "Asistencias Totales", "Tiros a Puerta", "Pases Clave", "Faltas Recibidas en Ataque"],
-            "Pilar 4: Físico y Sprints (7)": ["Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas", "Faltas Cometidas", "Tarjetas Rojas"]
+            "Pilar 4: Físico y Despliegue (7)": ["Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas", "Faltas Cometidas", "Tarjetas Rojas"]
         }
     elif posicion == "Pivote Defensivo (MCD)":
         return {
             "Pilar 1: Destrucción y Cobertura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa %", "Recuperaciones Altas", "Faltas Cometidas", "Bloqueos de Pase", "Recuperaciones en Campo Propio"],
             "Pilar 2: Posesión y Salida (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Conducciones de Balón", "Faltas Recibidas", "Retención de Balón %"],
             "Pilar 3: Distribución y Transición (7)": ["Pases Progresivos", "Pases al Tercio Final", "Cambios de Orientación", "Pases Largos Precisos %", "Pases Clave", "Desbordes Evitados", "Intercepciones en Transición"],
-            "Pilar 4: Físico y Despliegue (7)": ["Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Duelos Aéreos Ganados %", "Tarjetas Amarillas", "Tarjetas Rojas", "Aceleraciones"]
+            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Duelos Aéreos Ganados %", "Tarjetas Amarillas", "Tarjetas Rojas", "Aceleraciones", "Velocidad Máxima (km/h)"]
         }
     elif posicion == "Mediocentro (MC)":
         return {
             "Pilar 1: Control y Volumen (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Retención de Balón %", "Pases Cortos Exitosos", "Orientación de Juego"],
             "Pilar 2: Creación y Progresión (8)": ["Pases Clave", "Pases Progresivos", "Asistencias Esperadas (xA)", "Pases al Tercio Final", "Cambios de Orientación", "Asistencias Directas", "Desbordes Exitosos", "Tiros de Larga Distancia"],
             "Pilar 3: Trabajo Defensivo (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa", "Recuperaciones de Balón", "Faltas Cometidas", "Bloqueos"],
-            "Pilar 4: Finalización y Físico (7)": ["Goles Esperados (xG)", "Tiros a Puerta", "Goles Totales", "Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Tarjetas Amarillas"]
+            "Pilar 4: Finalización y Físico (8)": ["Goles Esperados (xG)", "Tiros a Puerta", "Goles Totales", "Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Tarjetas Amarillas", "Velocidad Máxima (km/h)"]
         }
     elif posicion == "Medio Centro Ofensivo (MCO)":
         return {
@@ -120,7 +120,7 @@ def obtener_30_metricas(posicion):
             "Pilar 1: Desequilibrio y Regate (8)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Desbordes por Banda", "Faltas Recibidas en Ataque", "Aceleraciones", "Conducciones al Área", "Pérdidas de Balón", "Fueras de Lugar"],
             "Pilar 2: Creación y Centros (7)": ["Centros Precisos %", "Pases Clave", "Asistencias Esperadas (xA)", "Asistencias Directas", "Pases al Área Rival", "Toques Totales", "Pases Progresivos Recibidos"],
             "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
-            "Pilar 4: Físico y Trabajo (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
+            "Pilar 4: Físico y Despliegue (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
         }
     else:
         return {
@@ -171,7 +171,7 @@ def calcular_promedios_df(df_input):
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
         for k, v in m_custom.items():
-            if k in ["video_clip", "video_titulo"]: continue
+            if k in ["video_clip", "video_titulo", "estatus_participacion"]: continue
             try:
                 val_f = float(v)
                 sumas[k] = sumas.get(k, 0.0) + val_f
@@ -192,7 +192,7 @@ def calcular_promedios_df(df_input):
             sumas["Intercepciones"] = sumas.get("Intercepciones", 0.0) + float(row.get('intercepciones', 0) or 0)
 
     for k, total_val in sumas.items():
-        if "%" in k or "Velocidad" in k:
+        if "%" in k or "Velocidad" in k or "km/h" in k:
             promedios[k] = round(total_val / tot_partidos, 1)
         elif "Minutos" in k:
             promedios[k] = round(total_val / tot_partidos, 0)
@@ -265,7 +265,7 @@ EQUIPOS_POR_LIGA = {
     "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
     "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
     "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "Allsvenskan": ["AIK", "BK Häcken", "Djurgårdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgárdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
 }
 
 # 5. MOSTRAR PERFIL
@@ -352,7 +352,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                         cols = st.columns(4)
                         for j, metrica in enumerate(lista_m):
                             val_calculado = promedios_gen.get(metrica, 0.0)
-                            unit = "%" if "%" in metrica else (" km/h" if "Velocidad" in metrica else ("" if "Minutos" in metrica else " p/P"))
+                            unit = "%" if "%" in metrica else (" km/h" if ("Velocidad" in metrica or "km/h" in metrica) else ("" if "Minutos" in metrica else " p/P"))
                             cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calculado}{unit}</span></div>", unsafe_allow_html=True)
 
         with sub_vistas[1]:
@@ -394,7 +394,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                             cols = st.columns(4)
                             for j, metrica in enumerate(lista_m):
                                 val_calc_t = promedios_torneo.get(metrica, 0.0)
-                                unit_t = "%" if "%" in metrica else (" km/h" if "Velocidad" in metrica else ("" if "Minutos" in metrica else " p/P"))
+                                unit_t = "%" if "%" in metrica else (" km/h" if ("Velocidad" in metrica or "km/h" in metrica) else ("" if "Minutos" in metrica else " p/P"))
                                 cols[j % 4].markdown(f"<div class='metric-card'><b>{metrica}</b><br><span style='color:#C8A165; font-weight:bold;'>{val_calc_t}{unit_t}</span></div>", unsafe_allow_html=True)
             else:
                 st.info("No hay partidos registrados para filtrar por competición. Registra partidos en 'Ingreso de Data'.")
@@ -412,9 +412,15 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 idx_p = partidos_lista.index(partido_sel)
                 p_data = df_partidos_torneo.iloc[idx_p]
                 
-                st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
-                
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
+                e_part = m_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
+
+                if "Sin Participación" in e_part:
+                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: SIN PARTICIPACIÓN (EN BANCA)**")
+                elif "No Convocado" in e_part:
+                    st.error(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: NO CONVOCADO**")
+                else:
+                    st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
 
                 video_data = m_custom.get("video_clip")
                 video_titulo = m_custom.get("video_titulo", "Clip de la Acción")
@@ -540,7 +546,6 @@ st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
     
-    /* Muestra la barra superior de forma transparente para permitir desplegar el menú en móviles */
     [data-testid="stHeader"] { background-color: transparent !important; }
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
@@ -775,7 +780,15 @@ else:
                     n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
                     
                 n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
-                v_minutos = c2.number_input("Minutos Jugados en el Partido", 0, 120, 90, key="p_min_input")
+                
+                # BOTONES DE ESTATUS RÁPIDO DE PARTICIPACIÓN
+                estatus_part = st.radio("Estatus de Participación del Jugador", ["Jugó (Titular / Cambio)", "Sin Participación (En Banca)", "No Convocado"], horizontal=True, key="p_estatus_part")
+                
+                if estatus_part == "Jugó (Titular / Cambio)":
+                    v_minutos = c2.number_input("Minutos Jugados en el Partido", 1, 120, 90, key="p_min_input")
+                else:
+                    v_minutos = 0
+                    st.info(f"Se registrará automáticamente con **0 minutos** y todas las métricas en cero ({estatus_part}).")
 
                 st.markdown("##### 🎬 Adjuntar Clip de Video del Partido (Opcional)")
                 v_titulo = st.text_input("Título del Video (ej. Gol de Cabeza al '84)", key="p_v_tit")
@@ -791,16 +804,23 @@ else:
                         with tabs_p[i]:
                             cols = st.columns(4)
                             for j, metrica in enumerate(lista_m):
-                                if "xG Evitados" in metrica or "Diferencia" in metrica:
-                                    val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
-                                elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
-                                    val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
+                                default_v = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0
+                                if estatus_part != "Jugó (Titular / Cambio)":
+                                    val = default_v
+                                    cols[j % 4].markdown(f"**{metrica}:** 0")
                                 else:
-                                    val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
+                                    if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                        val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
+                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                        val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
+                                    else:
+                                        val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
                                 valores_capturados[metrica] = val
                     
                     if st.form_submit_button("Guardar Partido en Supabase"):
                         if n_jugador and supabase:
+                            valores_capturados["estatus_participacion"] = estatus_part
+                            
                             goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
                             asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
                             tiros_cap = int(valores_capturados.get("Tiros a Puerta", valores_capturados.get("Tiros Totales", 0)))
@@ -881,8 +901,17 @@ else:
                         else:
                             ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key=f"ed_equipo_txt_{p_id}")
                             
-                        ed_minutos = med_c2.number_input("Minutos Jugados", 0, 120, int(p_curr.get('minutos', 90)), key=f"min_ed_val_{p_id}")
-                        
+                        ed_estatus_prev = m_curr_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
+                        estatus_opts = ["Jugó (Titular / Cambio)", "Sin Participación (En Banca)", "No Convocado"]
+                        est_idx = estatus_opts.index(ed_estatus_prev) if ed_estatus_prev in estatus_opts else 0
+                        ed_estatus_part = st.radio("Estatus de Participación del Jugador", estatus_opts, index=est_idx, horizontal=True, key=f"ed_estatus_part_{p_id}")
+
+                        if ed_estatus_part == "Jugó (Titular / Cambio)":
+                            ed_minutos = med_c2.number_input("Minutos Jugados", 1, 120, int(p_curr.get('minutos', 90)), key=f"min_ed_val_{p_id}")
+                        else:
+                            ed_minutos = 0
+                            st.info(f"Se actualizará automáticamente con **0 minutos** ({ed_estatus_part}).")
+
                         st.markdown("##### 🎬 2. Adjuntar / Actualizar Clip de Video del Partido")
                         v_tit_prev = m_curr_custom.get("video_titulo", "")
                         v_tit_ed = st.text_input("Título del Video", value=v_tit_prev, key=f"ed_v_tit_{p_id}")
@@ -896,13 +925,17 @@ else:
                                 with tabs_ed[i]:
                                     cols = st.columns(4)
                                     for j, metrica in enumerate(lista_m):
-                                        val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica) else 0)
-                                        if "xG Evitados" in metrica or "Diferencia" in metrica:
-                                            val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
-                                        elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
-                                            val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
+                                        val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0)
+                                        if ed_estatus_part != "Jugó (Titular / Cambio)":
+                                            val_c = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0
+                                            cols[j % 4].markdown(f"**{metrica}:** 0")
                                         else:
-                                            val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
+                                            if "xG Evitados" in metrica or "Diferencia" in metrica:
+                                                val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
+                                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                                val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
+                                            else:
+                                                val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
                                         valores_corregidos[metrica] = val_c
                                         
                             col_ed_b1, col_ed_b2 = st.columns(2)
@@ -911,6 +944,8 @@ else:
                             
                             if btn_guardar:
                                 if supabase and p_id:
+                                    valores_corregidos["estatus_participacion"] = ed_estatus_part
+                                    
                                     g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
                                     a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
                                     t_c = int(valores_corregidos.get("Tiros a Puerta", valores_corregidos.get("Tiros Totales", 0)))

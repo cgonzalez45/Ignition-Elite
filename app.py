@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import math
 import os
 import base64
+from datetime import date, datetime
 
 from supabase import create_client, Client
 
@@ -405,7 +406,7 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 torneo_f = c_f1.selectbox("Filtrar Torneo:", df_partidos['liga'].unique().tolist(), key=f"tf_{jugador['ID']}")
                 
                 df_partidos_torneo = df_partidos[df_partidos['liga'] == torneo_f]
-                partidos_lista = [f"{row['jornada']} vs. {row['equipo']}" for _, row in df_partidos_torneo.iterrows()]
+                partidos_lista = [f"{row.get('fecha', 'S/F')} | {row['jornada']} vs. {row['equipo']} ({row.get('marcador', 'N/D')})" for _, row in df_partidos_torneo.iterrows()]
                 
                 partido_sel = c_f2.selectbox("Seleccionar Juego Específico:", partidos_lista, key=f"ps_{jugador['ID']}")
                 
@@ -415,12 +416,15 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
                 e_part = m_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
 
+                p_fecha_str = p_data.get('fecha', 'N/D')
+                p_marcador_str = p_data.get('marcador', 'N/D')
+
                 if "Sin Participación" in e_part:
-                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: SIN PARTICIPACIÓN (EN BANCA)**")
+                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | **ESTATUS: SIN PARTICIPACIÓN (EN BANCA)**")
                 elif "No Convocado" in e_part:
-                    st.error(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | **ESTATUS: NO CONVOCADO**")
+                    st.error(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | **ESTATUS: NO CONVOCADO**")
                 else:
-                    st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Torneo: **{p_data['liga']}**")
+                    st.success(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | Torneo: **{p_data['liga']}**")
 
                 video_data = m_custom.get("video_clip")
                 video_titulo = m_custom.get("video_titulo", "Clip de la Acción")
@@ -760,7 +764,7 @@ else:
             
             # PESTAÑA A: CAPTURAR NUEVO PARTIDO
             with tab_captura:
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 if todos_jugadores:
                     n_jugador = c1.selectbox("Seleccionar Jugador Registrado", todos_jugadores, key="p_nom_select")
                 else:
@@ -768,16 +772,19 @@ else:
                     
                 n_posicion = c1.selectbox("Posición Específica (Define el Formulario)", LISTA_POSICIONES, key="p_pos_dyn_input")
                 
-                n_liga_sel = c2.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
+                n_fecha = c2.date_input("Fecha del Partido", value=date.today(), key="p_fecha_input")
+                n_marcador = c2.text_input("Marcador Final (ej. 2 - 1)", key="p_marcador_input")
+                
+                n_liga_sel = c3.selectbox("Competición / Torneo", LIGAS_MUNDIALES, key="p_liga_dyn")
                 if "Copa Doméstica" in n_liga_sel:
-                    n_liga = c2.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
+                    n_liga = c3.text_input("Escribir Nombre de la Copa / Torneo", key="p_liga_copa_txt")
                 else:
                     n_liga = n_liga_sel
 
                 if n_liga in EQUIPOS_POR_LIGA:
-                    n_equipo = c2.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
+                    n_equipo = c3.selectbox("Equipo Rival", EQUIPOS_POR_LIGA[n_liga], key="p_club_dyn")
                 else:
-                    n_equipo = c2.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
+                    n_equipo = c3.text_input("Equipo Rival (Escribir nombre)", key="p_club_txt_dyn")
                     
                 n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
                 
@@ -804,14 +811,14 @@ else:
                         with tabs_p[i]:
                             cols = st.columns(4)
                             for j, metrica in enumerate(lista_m):
-                                default_v = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0
+                                default_v = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica or "km/h" in metrica) else 0
                                 if estatus_part != "Jugó (Titular / Cambio)":
                                     val = default_v
                                     cols[j % 4].markdown(f"**{metrica}:** 0")
                                 else:
                                     if "xG Evitados" in metrica or "Diferencia" in metrica:
                                         val = cols[j % 4].number_input(metrica, -50.0, 50.0, 0.0, step=0.01, key=f"m_{n_posicion}_{i}_{j}")
-                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                    elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica or "km/h" in metrica:
                                         val = cols[j % 4].number_input(metrica, 0.0, 100.0, 0.0, step=0.1, key=f"m_{n_posicion}_{i}_{j}")
                                     else:
                                         val = cols[j % 4].number_input(metrica, 0, 200, 0, step=1, key=f"m_{n_posicion}_{i}_{j}")
@@ -838,6 +845,8 @@ else:
                                 "liga": n_liga,
                                 "equipo": n_equipo,
                                 "jornada": n_jornada,
+                                "fecha": str(n_fecha),
+                                "marcador": n_marcador if n_marcador else "N/D",
                                 "minutos": v_minutos,
                                 "goles": goles_cap,
                                 "asistencias": asis_cap,
@@ -864,7 +873,7 @@ else:
                     df_p_ed = consultar_partidos_jugador(j_ed_sel)
                     
                     if not df_p_ed.empty:
-                        partidos_lista_ed = [f"ID #{row['id']} - {row['jornada']} vs. {row['equipo']} ({row['liga']})" for _, row in df_p_ed.iterrows()]
+                        partidos_lista_ed = [f"ID #{row['id']} - {row.get('fecha', 'S/F')} | {row['jornada']} vs. {row['equipo']} ({row.get('marcador', 'N/D')})" for _, row in df_p_ed.iterrows()]
                         partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
                         
                         idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
@@ -877,19 +886,27 @@ else:
                         pos_ed = p_curr['posicion']
                         metricas_pos_ed = obtener_30_metricas(pos_ed)
                         
-                        st.markdown("##### 1. Corrección de Contexto (Jornada, Torneo y Rival)")
-                        med_c1, med_c2 = st.columns(2)
+                        st.markdown("##### 1. Corrección de Contexto (Jornada, Fecha, Torneo y Rival)")
+                        med_c1, med_c2, med_c3 = st.columns(3)
                         
                         j_curr_val = p_curr.get('jornada', JORNADAS_OPCIONES[0])
                         j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
                         ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key=f"ed_jornada_{p_id}")
                         
+                        fecha_raw = p_curr.get('fecha')
+                        try:
+                            fecha_default = datetime.strptime(fecha_raw, "%Y-%m-%d").date() if fecha_raw else date.today()
+                        except Exception:
+                            fecha_default = date.today()
+                        ed_fecha = med_c2.date_input("Fecha del Partido", value=fecha_default, key=f"ed_fecha_{p_id}")
+                        ed_marcador = med_c3.text_input("Marcador Final", value=str(p_curr.get('marcador', '')), key=f"ed_marcador_{p_id}")
+
                         l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
                         l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
-                        ed_liga_sel = med_c2.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key=f"ed_liga_sel_{p_id}")
+                        ed_liga_sel = med_c1.selectbox("Competición / Torneo Base", LIGAS_MUNDIALES, index=l_idx, key=f"ed_liga_sel_{p_id}")
                         
                         if "Copa Doméstica" in ed_liga_sel:
-                            ed_liga = med_c2.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key=f"ed_liga_copa_{p_id}")
+                            ed_liga = med_c1.text_input("Escribir Nombre de la Copa / Torneo", value=p_curr.get('liga', ''), key=f"ed_liga_copa_{p_id}")
                         else:
                             ed_liga = ed_liga_sel
 
@@ -897,9 +914,9 @@ else:
                             eq_opciones = EQUIPOS_POR_LIGA[ed_liga]
                             e_curr_val = p_curr.get('equipo', eq_opciones[0])
                             e_idx = eq_opciones.index(e_curr_val) if e_curr_val in eq_opciones else 0
-                            ed_equipo = med_c1.selectbox("Equipo Rival", eq_opciones, index=e_idx, key=f"ed_equipo_{p_id}_{ed_liga}")
+                            ed_equipo = med_c2.selectbox("Equipo Rival", eq_opciones, index=e_idx, key=f"ed_equipo_{p_id}_{ed_liga}")
                         else:
-                            ed_equipo = med_c1.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key=f"ed_equipo_txt_{p_id}")
+                            ed_equipo = med_c2.text_input("Equipo Rival (Escribir nombre)", value=p_curr.get('equipo', ''), key=f"ed_equipo_txt_{p_id}")
                             
                         ed_estatus_prev = m_curr_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
                         estatus_opts = ["Jugó (Titular / Cambio)", "Sin Participación (En Banca)", "No Convocado"]
@@ -907,7 +924,7 @@ else:
                         ed_estatus_part = st.radio("Estatus de Participación del Jugador", estatus_opts, index=est_idx, horizontal=True, key=f"ed_estatus_part_{p_id}")
 
                         if ed_estatus_part == "Jugó (Titular / Cambio)":
-                            ed_minutos = med_c2.number_input("Minutos Jugados", 1, 120, int(p_curr.get('minutos', 90)), key=f"min_ed_val_{p_id}")
+                            ed_minutos = med_c3.number_input("Minutos Jugados", 1, 120, int(p_curr.get('minutos', 90)), key=f"min_ed_val_{p_id}")
                         else:
                             ed_minutos = 0
                             st.info(f"Se actualizará automáticamente con **0 minutos** ({ed_estatus_part}).")
@@ -925,14 +942,14 @@ else:
                                 with tabs_ed[i]:
                                     cols = st.columns(4)
                                     for j, metrica in enumerate(lista_m):
-                                        val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0)
+                                        val_prev = m_curr_custom.get(metrica, 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica or "km/h" in metrica) else 0)
                                         if ed_estatus_part != "Jugó (Titular / Cambio)":
-                                            val_c = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica) else 0
+                                            val_c = 0.0 if ("%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica or "km/h" in metrica) else 0
                                             cols[j % 4].markdown(f"**{metrica}:** 0")
                                         else:
                                             if "xG Evitados" in metrica or "Diferencia" in metrica:
                                                 val_c = cols[j % 4].number_input(metrica, -50.0, 50.0, float(val_prev), step=0.01, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
-                                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica:
+                                            elif "%" in metrica or "xG" in metrica or "xA" in metrica or "km" in metrica or "Distancia" in metrica or "Velocidad" in metrica or "km/h" in metrica:
                                                 val_c = cols[j % 4].number_input(metrica, 0.0, 100.0, float(val_prev), step=0.1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
                                             else:
                                                 val_c = cols[j % 4].number_input(metrica, 0, 200, int(val_prev), step=1, key=f"med_{pos_ed}_{i}_{j}_{p_id}")
@@ -968,6 +985,8 @@ else:
                                         "jornada": ed_jornada,
                                         "liga": ed_liga,
                                         "equipo": ed_equipo,
+                                        "fecha": str(ed_fecha),
+                                        "marcador": ed_marcador if ed_marcador else "N/D",
                                         "minutos": ed_minutos,
                                         "goles": g_c,
                                         "asistencias": a_c,

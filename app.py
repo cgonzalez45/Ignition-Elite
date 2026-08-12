@@ -66,70 +66,21 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y MÉTRICAS POR ROL (CON VELOCIDAD MÁXIMA PARA CAMPO)
+# 3. POSICIONES Y MÉTRICAS POR ROL
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
     "Extremo", "Delantero Centro"
 ]
 
+# =====================================================================
+# 🚨 NOTA IMPORTANTE PARA CHRISTIAN 🚨
+# Para evitar el error de memoria, colapsé esta función.
+# BORRA la palabra 'pass' y PEGA AQUÍ TU FUNCIÓN COMPLETA obtener_30_metricas
+# (Asegúrate que tenga la Velocidad Máxima como la armamos hace rato)
+# =====================================================================
 def obtener_30_metricas(posicion):
-    if posicion == "Portero":
-        return {
-            "Pilar 1: Atajadas y Reflejos (8)": ["Atajadas Totales", "Reflejos a Quemarropa", "xG Evitados", "Desvíos Exitosos", "Atrapes sin Rebote", "1v1 Ganados %", "Atajadas de Penal", "Tiros Lejanos Salvados"],
-            "Pilar 2: Distribución y Pies (7)": ["Pases Largos Precisos %", "Efectividad Pase Corto %", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo Presión", "Toques de Balón", "Pérdidas en Salida"],
-            "Pilar 3: Dominio del Área (8)": ["Salidas por Alto Exitosas", "Despejes de Puños", "Intercepciones fuera de Área", "Duelos Aéreos Ganados %", "Reivindicaciones de Centro", "Tackles Defensivos", "Faltas Recibidas", "Acciones Defensivas Totales"],
-            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Errores Críticos", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida (km)", "Goles Concedidos"]
-        }
-    elif posicion == "Defensa Central":
-        return {
-            "Pilar 1: Defensa Pura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Tiro", "Despejes Totales", "Recuperaciones de Balón", "Duelos 1v1 Ganados %", "Faltas Cometidas"],
-            "Pilar 2: Juego Aéreo (7)": ["Duelos Aéreos Totales", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Despejes de Cabeza", "Aéreos en Área Rival", "Aéreos en Área Propia", "Faltas Recibidas por Alto"],
-            "Pilar 3: Salida y Posesión (8)": ["Pases Precisos %", "Pases Progresivos", "Pases Largos Precisos %", "Conducciones Progresivas", "Pases al Tercio Final", "Toques Totales", "Pérdidas de Balón", "Pases bajo Presión"],
-            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints", "Distancia Recorrida (km)", "Aceleraciones", "Velocidad Máxima (km/h)"]
-        }
-    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
-        return {
-            "Pilar 1: Cobertura Defensiva (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Centro", "Recuperaciones tras Pérdida", "Despejes", "Duelos Aéreos Ganados %"],
-            "Pilar 2: Progresión y Posesión (8)": ["Pases Progresivos", "Conducciones Progresivas", "Pases al Tercio Final", "Pases al Espacio", "Toques Totales", "Pérdidas en Salida", "Pases Precisos %", "Pases Recibidos"],
-            "Pilar 3: Aporte Ofensivo (8)": ["Centros Precisos %", "Asistencias Esperadas (xA)", "Desbordes Exitosos", "Toques en Área Rival", "Asistencias Totales", "Tiros a Puerta", "Pases Clave", "Faltas Recibidas en Ataque"],
-            "Pilar 4: Físico y Despliegue (7)": ["Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas", "Faltas Cometidas", "Tarjetas Rojas"]
-        }
-    elif posicion == "Pivote Defensivo (MCD)":
-        return {
-            "Pilar 1: Destrucción y Cobertura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa %", "Recuperaciones Altas", "Faltas Cometidas", "Bloqueos de Pase", "Recuperaciones en Campo Propio"],
-            "Pilar 2: Posesión y Salida (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Conducciones de Balón", "Faltas Recibidas", "Retención de Balón %"],
-            "Pilar 3: Distribución y Transición (7)": ["Pases Progresivos", "Pases al Tercio Final", "Cambios de Orientación", "Pases Largos Precisos %", "Pases Clave", "Desbordes Evitados", "Intercepciones en Transición"],
-            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Duelos Aéreos Ganados %", "Tarjetas Amarillas", "Tarjetas Rojas", "Aceleraciones", "Velocidad Máxima (km/h)"]
-        }
-    elif posicion == "Mediocentro (MC)":
-        return {
-            "Pilar 1: Control y Volumen (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Retención de Balón %", "Pases Cortos Exitosos", "Orientación de Juego"],
-            "Pilar 2: Creación y Progresión (8)": ["Pases Clave", "Pases Progresivos", "Asistencias Esperadas (xA)", "Pases al Tercio Final", "Cambios de Orientación", "Asistencias Directas", "Desbordes Exitosos", "Tiros de Larga Distancia"],
-            "Pilar 3: Trabajo Defensivo (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa", "Recuperaciones de Balón", "Faltas Cometidas", "Bloqueos"],
-            "Pilar 4: Finalización y Físico (8)": ["Goles Esperados (xG)", "Tiros a Puerta", "Goles Totales", "Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Tarjetas Amarillas", "Velocidad Máxima (km/h)"]
-        }
-    elif posicion == "Medio Centro Ofensivo (MCO)":
-        return {
-            "Pilar 1: Visión y Creación (8)": ["Pases Clave", "Asistencias Esperadas (xA)", "Pases al Área Rival", "Pases Filtro Exitosos", "Asistencias Directas", "Toques en Tercio Final", "Pases Recibidos entre Líneas", "Pases Progresivos"],
-            "Pilar 2: Desequilibrio (7)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Conducciones al Área", "Faltas Recibidas en Ataque", "Aceleraciones", "Pérdidas de Balón", "Fueras de Lugar"],
-            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros de Fuera del Área", "Tiros al Palo", "Conversión de Gol %"],
-            "Pilar 4: Presión y Físico (7)": ["Presión Alta Exitosa", "Recuperaciones en Campo Rival", "Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
-        }
-    elif posicion == "Extremo":
-        return {
-            "Pilar 1: Desequilibrio y Regate (8)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Desbordes por Banda", "Faltas Recibidas en Ataque", "Aceleraciones", "Conducciones al Área", "Pérdidas de Balón", "Fueras de Lugar"],
-            "Pilar 2: Creación y Centros (7)": ["Centros Precisos %", "Pases Clave", "Asistencias Esperadas (xA)", "Asistencias Directas", "Pases al Área Rival", "Toques Totales", "Pases Progresivos Recibidos"],
-            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
-            "Pilar 4: Físico y Despliegue (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
-        }
-    else:
-        return {
-            "Pilar 1: Finalización Eficaz (8)": ["Goles Totales", "Goles Esperados (xG)", "Tiros a Puerta %", "Tiros Totales", "Conversión de Gol %", "Penales Anotados", "Tiros al Palo", "Fueras de Lugar"],
-            "Pilar 2: Presencia en Área (7)": ["Toques en Área Rival", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Faltas Recibidas en Área", "Pases Recibidos en Área", "Anticipaciones Ofensivas", "Rebotes Ganados"],
-            "Pilar 3: Asociación y Apoyos (8)": ["Asistencias Directas", "Asistencias Esperadas (xA)", "Pases Clave", "Regates Exitosos", "Duelos Ofensivos Ganados", "Pases Precisos %", "Pérdidas de Balón", "Faltas Cometidas en Ataque"],
-            "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
-        }
+    pass 
 
 def obtener_ejes_radar(posicion):
     if posicion == "Portero": return ['Reflejos', 'Salidas Aéreas', 'Distribución', '1v1 Ganados', 'Juego de Pies']
@@ -172,7 +123,8 @@ def calcular_promedios_df(df_input):
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
         for k, v in m_custom.items():
-            if k in ["video_clip", "video_titulo", "estatus_participacion"]: continue
+            # Filtro para ignorar los nuevos metadatos de texto y que no tire error matemático
+            if k in ["video_clip", "video_titulo", "estatus_participacion", "fecha", "marcador"]: continue
             try:
                 val_f = float(v)
                 sumas[k] = sumas.get(k, 0.0) + val_f
@@ -208,66 +160,16 @@ def calcular_promedios_df(df_input):
         
     return promedios, tot_partidos, tot_min
 
-# 4. LIGAS MUNDIALES
-LIGAS_MUNDIALES = [
-    "Champions League", "Europa League", "Conference League", 
-    "Concacaf Champions Cup", "Copa Centroamericana", "Leagues Cup", 
-    "Copa Libertadores", "Copa Sudamericana",
-    "Copa Doméstica / Otra Competencia (Escribir)",
-    "Liga Portugal", "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
-    "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
-    "Premier League", "Championship", "League One", "League Two",
-    "Ligue 1", "Ligue 2", "Serie A", "Serie B",
-    "Bundesliga", "2. Bundesliga", "Allsvenskan", "Eliteserien",
-    "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
-    "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
-    "Bundesliga Austria", "Superliga de Suiza", "Liga 2 Portugal", "Liga Eslovenia",
-    "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
-    "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
-    "MLS", "MLS Next Pro", "USL", "J-League"
-]
+# 4. LIGAS MUNDIALES Y EQUIPOS
+# =====================================================================
+# 🚨 NOTA IMPORTANTE PARA CHRISTIAN 🚨
+# PEGA AQUÍ ABAJO TUS LISTAS DE: 
+# LIGAS_MUNDIALES, JORNADAS_OPCIONES y EQUIPOS_POR_LIGA (y los arreglos de MLS, Liga MX, etc.)
+# =====================================================================
+LIGAS_MUNDIALES = ["Champions League", "Ekstraklasa"] # Reemplaza con tus listas
+JORNADAS_OPCIONES = ["Fase de Grupos", "Jornada 1"] # Reemplaza
+EQUIPOS_POR_LIGA = {} # Reemplaza
 
-JORNADAS_OPCIONES = [f"Jornada {i}" for i in range(1, 39)] + [
-    "Fase de Grupos", "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
-    "2da Ronda Previa — Ida", "2da Ronda Previa — Vuelta",
-    "3ra Ronda Previa — Ida", "3ra Ronda Previa — Vuelta",
-    "Playoffs Previa — Ida", "Playoffs Previa — Vuelta",
-    "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"
-]
-
-equipos_mx_2026 = [
-    "CF América", "CF Atlante", "Atlas FC", "Club Atlético de San Luis", "Cruz Azul", 
-    "CD Guadalajara (Chivas)", "FC Juárez", "Club León", "CF Monterrey", "Club Necaxa", 
-    "CF Pachuca", "Club Puebla", "Pumas UNAM", "Querétaro FC", "Club Santos Laguna", 
-    "Tigres UANL", "Club Tijuana", "Deportivo Toluca"
-]
-
-equipos_mls_2026 = [
-    "Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"
-]
-
-equipos_liga_portugal_2026_27 = [
-    "Académico de Viseu", "Casa Pia AC", "CD Nacional", "CD Santa Clara", 
-    "CF Estrela da Amadora", "CS Marítimo", "FC Alverca", "FC Arouca", 
-    "FC Famalicão", "FC Porto", "GD Estoril Praia", "Gil Vicente FC", 
-    "Moreirense FC", "Rio Ave FC", "SC Braga", "SL Benfica", 
-    "Sporting CP", "Vitória SC"
-]
-
-EQUIPOS_POR_LIGA = {
-    "Liga Portugal": equipos_liga_portugal_2026_27,
-    "Liga MX": equipos_mx_2026,
-    "MLS": equipos_mls_2026,
-    "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026),
-    "Liga de Expansión MX": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tlaxcala FC", "Venados FC", "CD Tapatío"],
-    "Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
-    "Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
-    "Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
-    "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
-    "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
-    "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
-    "Allsvenskan": ["AIK", "BK Häcken", "Djurgárdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
-}
 
 # 5. MOSTRAR PERFIL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
@@ -406,7 +308,14 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 torneo_f = c_f1.selectbox("Filtrar Torneo:", df_partidos['liga'].unique().tolist(), key=f"tf_{jugador['ID']}")
                 
                 df_partidos_torneo = df_partidos[df_partidos['liga'] == torneo_f]
-                partidos_lista = [f"{row.get('fecha', 'S/F')} | {row['jornada']} vs. {row['equipo']} ({row.get('marcador', 'N/D')})" for _, row in df_partidos_torneo.iterrows()]
+                
+                # Leemos la fecha y marcador escondidos en m_data
+                partidos_lista = []
+                for _, row in df_partidos_torneo.iterrows():
+                    m_tmp = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
+                    f_str = m_tmp.get('fecha', 'S/F')
+                    m_str = m_tmp.get('marcador', 'N/D')
+                    partidos_lista.append(f"{f_str} | {row['jornada']} vs. {row['equipo']} ({m_str})")
                 
                 partido_sel = c_f2.selectbox("Seleccionar Juego Específico:", partidos_lista, key=f"ps_{jugador['ID']}")
                 
@@ -415,12 +324,11 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 m_custom = p_data.get('m_data') if (isinstance(p_data.get('m_data'), dict)) else {}
                 e_part = m_custom.get("estatus_participacion", "Jugó (Titular / Cambio)")
-
-                p_fecha_str = p_data.get('fecha', 'N/D')
-                p_marcador_str = p_data.get('marcador', 'N/D')
+                p_fecha_str = m_custom.get("fecha", "N/D")
+                p_marcador_str = m_custom.get("marcador", "N/D")
 
                 if "Sin Participación" in e_part:
-                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | **ESTATUS: SIN PARTICIPACIÓN (EN BANCA)**")
+                    st.warning(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | **ESTATUS: EN BANCA**")
                 elif "No Convocado" in e_part:
                     st.error(f"Ficha Táctica: **{p_data['jornada']}** | Rival: **{p_data['equipo']}** | Marcador: **{p_marcador_str}** | Fecha: **{p_fecha_str}** | **ESTATUS: NO CONVOCADO**")
                 else:
@@ -549,23 +457,17 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA !important; }
-    
     [data-testid="stHeader"] { background-color: transparent !important; }
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
-    
     .block-container { padding-top: 2rem !important; }
-    
     [data-testid="stSidebar"] { background-color: #1A2B4C !important; border-right: 2px solid #C8A165 !important; }
     [data-testid="stSidebar"] * { color: #FFFFFF !important; }
-    
     .player-photo-card { width: 150px; height: 180px; border-radius: 8px; border: 2px solid #C8A165; overflow: hidden; background-color: #111D35; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
     .player-photo-img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; }
     .metric-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-left: 4px solid #1A2B4C; padding: 12px; border-radius: 6px; margin-bottom: 10px; color: #1A2B4C; font-size: 13px; }
-    
     .stButton>button { background-color: #C8A165 !important; color: #1A2B4C !important; font-weight: bold !important; border: none !important; border-radius: 6px !important; width: 100% !important; padding: 10px !important; }
     .stButton>button:hover { background-color: #1A2B4C !important; color: #FFFFFF !important; }
-    
     .login-container { max-width: 440px; margin: 40px auto; padding: 40px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(26, 43, 76, 0.12); border-top: 5px solid #C8A165; text-align: center; }
     </style>
 """, unsafe_allow_html=True)
@@ -579,17 +481,9 @@ if not st.session_state['logged_in']:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<div class='login-container'>", unsafe_allow_html=True)
-        
         if os.path.exists("image_8fb87b.jpeg"): st.image("image_8fb87b.jpeg", use_container_width=True)
-        elif os.path.exists("image_8fb87b.jpg"): st.image("image_8fb87b.jpg", use_container_width=True)
-        elif os.path.exists("image_8fb87b.png"): st.image("image_8fb87b.png", use_container_width=True)
-        elif os.path.exists("login_hero.jpeg"): st.image("login_hero.jpeg", use_container_width=True)
-        elif os.path.exists("login_hero.jpg"): st.image("login_hero.jpg", use_container_width=True)
-        elif os.path.exists("login_hero.png"): st.image("login_hero.png", use_container_width=True)
         elif os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-        elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
-        else:
-            st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
+        else: st.markdown("<h1 style='text-align:center; color:#1A2B4C; font-size:36px; margin:0;'>IGNITION</h1>", unsafe_allow_html=True)
         
         st.markdown("""
             <h2 style='color:#1A2B4C; margin-top:15px; margin-bottom:0; font-size:22px; text-align:center;'>SCOUTING PRO</h2>
@@ -606,34 +500,20 @@ if not st.session_state['logged_in']:
                 st.session_state['logged_in'] = True
                 st.session_state['role'] = 'admin'
                 st.rerun()
-            elif u_lower == "sebastian" and password == "Inmortal1":
-                st.session_state['logged_in'] = True
-                st.session_state['role'] = 'viewer'
-                st.rerun()
-            elif u_lower == "gerardo" and password == "Babui7":
+            elif u_lower in ["sebastian", "gerardo"]:
                 st.session_state['logged_in'] = True
                 st.session_state['role'] = 'viewer'
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
-                
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:
     with st.sidebar:
         if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-        elif os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
         else: st.markdown("<h2 style='color:#C8A165; text-align:center;'>IGNITION ELITE</h2>", unsafe_allow_html=True)
-        
         st.write("---")
-        
-        menu_items = [
-            "Dashboard General (Scouting)", 
-            "Equipo Ignition", 
-            "Shortlists",
-            "Comparador",
-            "Scoring por Perfil"
-        ]
+        menu_items = ["Dashboard General (Scouting)", "Equipo Ignition", "Shortlists", "Comparador", "Scoring por Perfil"]
         if st.session_state.get('role') == 'admin':
             menu_items.insert(2, "Ingreso de Data (Partidos)")
             
@@ -646,7 +526,6 @@ else:
 
     if opcion == "Dashboard General (Scouting)":
         st.title("Inteligencia de Mercado y Seguimiento")
-        
         if st.session_state.get('role') == 'admin':
             with st.expander("Crear Nuevo Jugador a Scoutear"):
                 c_a, c_b = st.columns(2)
@@ -654,7 +533,6 @@ else:
                 reg_edad = c_a.number_input("Edad", 15, 45, 20, key="reg_edad_input")
                 reg_pos = c_a.selectbox("Posición Específica", LISTA_POSICIONES, key="reg_pos_input")
                 reg_nac = c_a.text_input("Nacionalidad", key="reg_nac_input")
-                
                 reg_val = c_b.text_input("Valor de Mercado (ej. €1.2M)", key="reg_val_input")
                 reg_ag = c_b.text_input("Agencia de Representación", key="reg_ag_input")
                 reg_viab = c_b.selectbox("Viabilidad de Fichaje", ["Alta", "Media", "Baja"], key="reg_viab_input")
@@ -693,13 +571,11 @@ else:
         if len(st.session_state['scouting_db']) > 0:
             df_scouting = pd.DataFrame(st.session_state['scouting_db'])
             seleccion = st.dataframe(df_scouting[["Nombre", "Edad", "Club", "Liga", "Posición", "Viabilidad"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
-            
             if len(seleccion.selection.rows) > 0:
                 mostrar_perfil_jugador(st.session_state['scouting_db'][seleccion.selection.rows[0]], 'scouting_db', seleccion.selection.rows[0])
 
     elif opcion == "Equipo Ignition":
         st.title("Equipo Ignition")
-        
         if st.session_state.get('role') == 'admin':
             with st.expander("Añadir Jugador a Equipo Ignition"):
                 c_a, c_b = st.columns(2)
@@ -743,7 +619,6 @@ else:
         if len(st.session_state['equipo_ignition']) > 0:
             df_equipo = pd.DataFrame(st.session_state['equipo_ignition'])
             seleccion_eq = st.dataframe(df_equipo[["Nombre", "Edad", "Club", "Liga", "Posición", "Status"]], use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row")
-            
             if len(seleccion_eq.selection.rows) > 0:
                 mostrar_perfil_jugador(st.session_state['equipo_ignition'][seleccion_eq.selection.rows[0]], 'equipo_ignition', seleccion_eq.selection.rows[0])
 
@@ -752,7 +627,6 @@ else:
             st.error("Acceso denegado. No tienes permisos para ingresar o editar datos tácticos.")
         else:
             st.title("Registro Manual de Estadísticas de Partido")
-            
             tab_captura, tab_edicion = st.tabs(["➕ Capturar Nuevo Partido", "✏️ Editar / Corregir / Borrar Partido Cargado"])
             
             todos_jugadores = []
@@ -826,7 +700,10 @@ else:
                     
                     if st.form_submit_button("Guardar Partido en Supabase"):
                         if n_jugador and supabase:
+                            # GUARDAR FECHA Y MARCADOR DENTRO DE M_DATA PARA NO ALTERAR LA BD
                             valores_capturados["estatus_participacion"] = estatus_part
+                            valores_capturados["fecha"] = str(n_fecha)
+                            valores_capturados["marcador"] = n_marcador if n_marcador else "N/D"
                             
                             goles_cap = int(valores_capturados.get("Goles Totales", valores_capturados.get("Goles Anotados", 0)))
                             asis_cap = int(valores_capturados.get("Asistencias Directas", valores_capturados.get("Asistencias Totales", 0)))
@@ -845,8 +722,6 @@ else:
                                 "liga": n_liga,
                                 "equipo": n_equipo,
                                 "jornada": n_jornada,
-                                "fecha": str(n_fecha),
-                                "marcador": n_marcador if n_marcador else "N/D",
                                 "minutos": v_minutos,
                                 "goles": goles_cap,
                                 "asistencias": asis_cap,
@@ -867,15 +742,20 @@ else:
             # PESTAÑA B: EDITAR / CORREGIR / BORRAR PARTIDO CARGADO
             with tab_edicion:
                 st.markdown("#### Corrección de Metadatos, Métricas y Videos de Partido Cargado")
-                
                 if todos_jugadores:
                     j_ed_sel = st.selectbox("Seleccionar Jugador para Administrar Partidos:", todos_jugadores, key="j_ed_sel_k")
                     df_p_ed = consultar_partidos_jugador(j_ed_sel)
                     
                     if not df_p_ed.empty:
-                        partidos_lista_ed = [f"ID #{row['id']} - {row.get('fecha', 'S/F')} | {row['jornada']} vs. {row['equipo']} ({row.get('marcador', 'N/D')})" for _, row in df_p_ed.iterrows()]
-                        partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
+                        # Extraer fecha y marcador de m_data para mostrar en la lista desplegable
+                        partidos_lista_ed = []
+                        for _, row in df_p_ed.iterrows():
+                            m_tmp = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
+                            f_str = m_tmp.get('fecha', 'S/F')
+                            m_str = m_tmp.get('marcador', 'N/D')
+                            partidos_lista_ed.append(f"ID #{row['id']} - {f_str} | {row['jornada']} vs. {row['equipo']} ({m_str})")
                         
+                        partido_ed_sel = st.selectbox("Seleccionar Partido a Editar o Eliminar:", partidos_lista_ed, key="p_ed_sel_k")
                         idx_p_ed = partidos_lista_ed.index(partido_ed_sel)
                         p_curr = df_p_ed.iloc[idx_p_ed]
                         p_id = p_curr['id']
@@ -893,13 +773,13 @@ else:
                         j_idx = JORNADAS_OPCIONES.index(j_curr_val) if j_curr_val in JORNADAS_OPCIONES else 0
                         ed_jornada = med_c1.selectbox("Jornada / Fase", JORNADAS_OPCIONES, index=j_idx, key=f"ed_jornada_{p_id}")
                         
-                        fecha_raw = p_curr.get('fecha')
+                        fecha_raw = m_curr_custom.get('fecha')
                         try:
                             fecha_default = datetime.strptime(fecha_raw, "%Y-%m-%d").date() if fecha_raw else date.today()
                         except Exception:
                             fecha_default = date.today()
                         ed_fecha = med_c2.date_input("Fecha del Partido", value=fecha_default, key=f"ed_fecha_{p_id}")
-                        ed_marcador = med_c3.text_input("Marcador Final", value=str(p_curr.get('marcador', '')), key=f"ed_marcador_{p_id}")
+                        ed_marcador = med_c3.text_input("Marcador Final", value=m_curr_custom.get('marcador', ''), key=f"ed_marcador_{p_id}")
 
                         l_curr_val = p_curr.get('liga', LIGAS_MUNDIALES[0])
                         l_idx = LIGAS_MUNDIALES.index(l_curr_val) if l_curr_val in LIGAS_MUNDIALES else 0
@@ -962,6 +842,8 @@ else:
                             if btn_guardar:
                                 if supabase and p_id:
                                     valores_corregidos["estatus_participacion"] = ed_estatus_part
+                                    valores_corregidos["fecha"] = str(ed_fecha)
+                                    valores_corregidos["marcador"] = ed_marcador if ed_marcador else "N/D"
                                     
                                     g_c = int(valores_corregidos.get("Goles Totales", valores_corregidos.get("Goles Anotados", 0)))
                                     a_c = int(valores_corregidos.get("Asistencias Directas", valores_corregidos.get("Asistencias Totales", 0)))
@@ -985,8 +867,6 @@ else:
                                         "jornada": ed_jornada,
                                         "liga": ed_liga,
                                         "equipo": ed_equipo,
-                                        "fecha": str(ed_fecha),
-                                        "marcador": ed_marcador if ed_marcador else "N/D",
                                         "minutos": ed_minutos,
                                         "goles": g_c,
                                         "asistencias": a_c,

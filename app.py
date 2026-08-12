@@ -66,21 +66,70 @@ def cargar_desde_supabase(tabla):
 st.session_state['scouting_db'] = cargar_desde_supabase('scouting_db')
 st.session_state['equipo_ignition'] = cargar_desde_supabase('equipo_ignition')
 
-# 3. POSICIONES Y MÉTRICAS POR ROL
+# 3. POSICIONES Y MÉTRICAS POR ROL (INCLUYE VELOCIDAD MÁXIMA EN CAMPO)
 LISTA_POSICIONES = [
     "Portero", "Defensa Central", "Lateral Izquierdo", "Lateral Derecho", 
     "Pivote Defensivo (MCD)", "Mediocentro (MC)", "Medio Centro Ofensivo (MCO)", 
     "Extremo", "Delantero Centro"
 ]
 
-# =====================================================================
-# 🚨 NOTA IMPORTANTE PARA CHRISTIAN 🚨
-# Para evitar el error de memoria, colapsé esta función.
-# BORRA la palabra 'pass' y PEGA AQUÍ TU FUNCIÓN COMPLETA obtener_30_metricas
-# (Asegúrate que tenga la Velocidad Máxima como la armamos hace rato)
-# =====================================================================
 def obtener_30_metricas(posicion):
-    pass 
+    if posicion == "Portero":
+        return {
+            "Pilar 1: Atajadas y Reflejos (8)": ["Atajadas Totales", "Reflejos a Quemarropa", "xG Evitados", "Desvíos Exitosos", "Atrapes sin Rebote", "1v1 Ganados %", "Atajadas de Penal", "Tiros Lejanos Salvados"],
+            "Pilar 2: Distribución y Pies (7)": ["Pases Largos Precisos %", "Efectividad Pase Corto %", "Saques de Meta Exitosos", "Inicios de Contragolpe", "Pases bajo Presión", "Toques de Balón", "Pérdidas en Salida"],
+            "Pilar 3: Dominio del Área (8)": ["Salidas por Alto Exitosas", "Despejes de Puños", "Intercepciones fuera de Área", "Duelos Aéreos Ganados %", "Reivindicaciones de Centro", "Tackles Defensivos", "Faltas Recibidas", "Acciones Defensivas Totales"],
+            "Pilar 4: Físico y Contexto (7)": ["Minutos Jugados", "Errores Críticos", "Tarjetas Amarillas", "Tarjetas Rojas", "Lesiones", "Distancia Recorrida (km)", "Goles Concedidos"]
+        }
+    elif posicion == "Defensa Central":
+        return {
+            "Pilar 1: Defensa Pura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Tiro", "Despejes Totales", "Recuperaciones de Balón", "Duelos 1v1 Ganados %", "Faltas Cometidas"],
+            "Pilar 2: Juego Aéreo (7)": ["Duelos Aéreos Totales", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Despejes de Cabeza", "Aéreos en Área Rival", "Aéreos en Área Propia", "Faltas Recibidas por Alto"],
+            "Pilar 3: Salida y Posesión (8)": ["Pases Precisos %", "Pases Progresivos", "Pases Largos Precisos %", "Conducciones Progresivas", "Pases al Tercio Final", "Toques Totales", "Pérdidas de Balón", "Pases bajo Presión"],
+            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Tarjetas Amarillas", "Tarjetas Rojas", "Errores Críticos", "Sprints", "Distancia Recorrida (km)", "Aceleraciones", "Velocidad Máxima (km/h)"]
+        }
+    elif posicion in ["Lateral Izquierdo", "Lateral Derecho"]:
+        return {
+            "Pilar 1: Cobertura Defensiva (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Bloqueos de Centro", "Recuperaciones tras Pérdida", "Despejes", "Duelos Aéreos Ganados %"],
+            "Pilar 2: Progresión y Posesión (8)": ["Pases Progresivos", "Conducciones Progresivas", "Pases al Tercio Final", "Pases al Espacio", "Toques Totales", "Pérdidas en Salida", "Pases Precisos %", "Pases Recibidos"],
+            "Pilar 3: Aporte Ofensivo (8)": ["Centros Precisos %", "Asistencias Esperadas (xA)", "Desbordes Exitosos", "Toques en Área Rival", "Asistencias Totales", "Tiros a Puerta", "Pases Clave", "Faltas Recibidas en Ataque"],
+            "Pilar 4: Físico y Despliegue (7)": ["Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas", "Faltas Cometidas", "Tarjetas Rojas"]
+        }
+    elif posicion == "Pivote Defensivo (MCD)":
+        return {
+            "Pilar 1: Destrucción y Cobertura (8)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa %", "Recuperaciones Altas", "Faltas Cometidas", "Bloqueos de Pase", "Recuperaciones en Campo Propio"],
+            "Pilar 2: Posesión y Salida (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Conducciones de Balón", "Faltas Recibidas", "Retención de Balón %"],
+            "Pilar 3: Distribución y Transición (7)": ["Pases Progresivos", "Pases al Tercio Final", "Cambios de Orientación", "Pases Largos Precisos %", "Pases Clave", "Desbordes Evitados", "Intercepciones en Transición"],
+            "Pilar 4: Físico y Despliegue (8)": ["Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Duelos Aéreos Ganados %", "Tarjetas Amarillas", "Tarjetas Rojas", "Aceleraciones", "Velocidad Máxima (km/h)"]
+        }
+    elif posicion == "Mediocentro (MC)":
+        return {
+            "Pilar 1: Control y Volumen (8)": ["Pases Precisos %", "Toques Totales", "Pases bajo Presión", "Pérdidas de Balón", "Pases Recibidos", "Retención de Balón %", "Pases Cortos Exitosos", "Orientación de Juego"],
+            "Pilar 2: Creación y Progresión (8)": ["Pases Clave", "Pases Progresivos", "Asistencias Esperadas (xA)", "Pases al Tercio Final", "Cambios de Orientación", "Asistencias Directas", "Desbordes Exitosos", "Tiros de Larga Distancia"],
+            "Pilar 3: Trabajo Defensivo (7)": ["Duelos Defensivos Ganados %", "Intercepciones", "Tackles Exitosos", "Presión Exitosa", "Recuperaciones de Balón", "Faltas Cometidas", "Bloqueos"],
+            "Pilar 4: Finalización y Físico (8)": ["Goles Esperados (xG)", "Tiros a Puerta", "Goles Totales", "Minutos Jugados", "Distancia Recorrida (km)", "Sprints", "Tarjetas Amarillas", "Velocidad Máxima (km/h)"]
+        }
+    elif posicion == "Medio Centro Ofensivo (MCO)":
+        return {
+            "Pilar 1: Visión y Creación (8)": ["Pases Clave", "Asistencias Esperadas (xA)", "Pases al Área Rival", "Pases Filtro Exitosos", "Asistencias Directas", "Toques en Tercio Final", "Pases Recibidos entre Líneas", "Pases Progresivos"],
+            "Pilar 2: Desequilibrio (7)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Conducciones al Área", "Faltas Recibidas en Ataque", "Aceleraciones", "Pérdidas de Balón", "Fueras de Lugar"],
+            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros de Fuera del Área", "Tiros al Palo", "Conversión de Gol %"],
+            "Pilar 4: Presión y Físico (7)": ["Presión Alta Exitosa", "Recuperaciones en Campo Rival", "Minutos Jugados", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
+        }
+    elif posicion == "Extremo":
+        return {
+            "Pilar 1: Desequilibrio y Regate (8)": ["Regates Exitosos %", "Duelos Ofensivos Ganados", "Desbordes por Banda", "Faltas Recibidas en Ataque", "Aceleraciones", "Conducciones al Área", "Pérdidas de Balón", "Fueras de Lugar"],
+            "Pilar 2: Creación y Centros (7)": ["Centros Precisos %", "Pases Clave", "Asistencias Esperadas (xA)", "Asistencias Directas", "Pases al Área Rival", "Toques Totales", "Pases Progresivos Recibidos"],
+            "Pilar 3: Finalización (8)": ["Goles Esperados (xG)", "Tiros Totales", "Tiros a Puerta", "Goles Totales", "Toques en Área Rival", "Tiros al Palo", "Conversión de Gol %", "Duelos Aéreos Ganados"],
+            "Pilar 4: Físico y Despliegue (7)": ["Presión en Tercio Rival", "Recuperaciones Altas", "Intercepciones", "Minutos Jugados", "Sprints", "Velocidad Máxima (km/h)", "Distancia Recorrida (km)"]
+        }
+    else: # Delantero Centro
+        return {
+            "Pilar 1: Finalización Eficaz (8)": ["Goles Totales", "Goles Esperados (xG)", "Tiros a Puerta %", "Tiros Totales", "Conversión de Gol %", "Penales Anotados", "Tiros al Palo", "Fueras de Lugar"],
+            "Pilar 2: Presencia en Área (7)": ["Toques en Área Rival", "Duelos Aéreos Ganados %", "Goles de Cabeza", "Faltas Recibidas en Área", "Pases Recibidos en Área", "Anticipaciones Ofensivas", "Rebotes Ganados"],
+            "Pilar 3: Asociación y Apoyos (8)": ["Asistencias Directas", "Asistencias Esperadas (xA)", "Pases Clave", "Regates Exitosos", "Duelos Ofensivos Ganados", "Pases Precisos %", "Pérdidas de Balón", "Faltas Cometidas en Ataque"],
+            "Pilar 4: Físico y Presión (7)": ["Minutos Jugados", "Presión Exitosa Alta", "Recuperaciones en Campo Rival", "Sprints", "Distancia Recorrida (km)", "Velocidad Máxima (km/h)", "Tarjetas Amarillas"]
+        }
 
 def obtener_ejes_radar(posicion):
     if posicion == "Portero": return ['Reflejos', 'Salidas Aéreas', 'Distribución', '1v1 Ganados', 'Juego de Pies']
@@ -104,7 +153,7 @@ def consultar_partidos_jugador(nombre_jugador):
     return pd.DataFrame()
 
 # ==============================================================
-# MOTOR MATEMÁTICO: "DATO DURO" + CANDADOS DE COHERENCIA LÓGICA
+# MOTOR MATEMÁTICO
 # ==============================================================
 def calcular_promedios_df(df_input):
     if df_input.empty:
@@ -123,7 +172,6 @@ def calcular_promedios_df(df_input):
         m_custom = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
         
         for k, v in m_custom.items():
-            # Filtro para ignorar los nuevos metadatos de texto y que no tire error matemático
             if k in ["video_clip", "video_titulo", "estatus_participacion", "fecha", "marcador"]: continue
             try:
                 val_f = float(v)
@@ -161,15 +209,65 @@ def calcular_promedios_df(df_input):
     return promedios, tot_partidos, tot_min
 
 # 4. LIGAS MUNDIALES Y EQUIPOS
-# =====================================================================
-# 🚨 NOTA IMPORTANTE PARA CHRISTIAN 🚨
-# PEGA AQUÍ ABAJO TUS LISTAS DE: 
-# LIGAS_MUNDIALES, JORNADAS_OPCIONES y EQUIPOS_POR_LIGA (y los arreglos de MLS, Liga MX, etc.)
-# =====================================================================
-LIGAS_MUNDIALES = ["Champions League", "Ekstraklasa"] # Reemplaza con tus listas
-JORNADAS_OPCIONES = ["Fase de Grupos", "Jornada 1"] # Reemplaza
-EQUIPOS_POR_LIGA = {} # Reemplaza
+LIGAS_MUNDIALES = [
+    "Champions League", "Europa League", "Conference League", 
+    "Concacaf Champions Cup", "Copa Centroamericana", "Leagues Cup", 
+    "Copa Libertadores", "Copa Sudamericana",
+    "Copa Doméstica / Otra Competencia (Escribir)",
+    "Liga Portugal", "Liga MX", "Niké Liga (Eslovaquia)", "Liga de Expansión MX", "Liga MX U-21", "Liga MX U-19", "Liga MX U-17", "Liga MX U-15",
+    "La Liga", "Liga Hypermotion", "Primera RFEF", "Segunda RFEF",
+    "Premier League", "Championship", "League One", "League Two",
+    "Ligue 1", "Ligue 2", "Serie A", "Serie B",
+    "Bundesliga", "2. Bundesliga", "Allsvenskan", "Eliteserien",
+    "Eredivisie", "Jupiler Pro League", "Superliga Dinamarca", "Ekstraklasa",
+    "efbet League Bulgaria", "SuperSport HNL", "Chance Liga", "Superliga Serbia",
+    "Bundesliga Austria", "Superliga de Suiza", "Liga 2 Portugal", "Liga Eslovenia",
+    "Primera División Argentina", "Primera División Costa Rica", "Primera División Colombia", 
+    "Brasileirao", "Brasileirao Série B", "Primera División Uruguay", "Primera División Chile", 
+    "MLS", "MLS Next Pro", "USL", "J-League"
+]
 
+JORNADAS_OPCIONES = [f"Jornada {i}" for i in range(1, 39)] + [
+    "Fase de Grupos", "1ra Ronda Previa — Ida", "1ra Ronda Previa — Vuelta",
+    "2da Ronda Previa — Ida", "2da Ronda Previa — Vuelta",
+    "3ra Ronda Previa — Ida", "3ra Ronda Previa — Vuelta",
+    "Playoffs Previa — Ida", "Playoffs Previa — Vuelta",
+    "16vos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Final"
+]
+
+equipos_mx_2026 = [
+    "CF América", "CF Atlante", "Atlas FC", "Club Atlético de San Luis", "Cruz Azul", 
+    "CD Guadalajara (Chivas)", "FC Juárez", "Club León", "CF Monterrey", "Club Necaxa", 
+    "CF Pachuca", "Club Puebla", "Pumas UNAM", "Querétaro FC", "Club Santos Laguna", 
+    "Tigres UANL", "Club Tijuana", "Deportivo Toluca"
+]
+
+equipos_mls_2026 = [
+    "Atlanta United FC", "Austin FC", "Charlotte FC", "Chicago Fire FC", "FC Cincinnati", "Colorado Rapids", "Columbus Crew", "D.C. United", "FC Dallas", "Houston Dynamo FC", "Inter Miami CF", "LA Galaxy", "LAFC", "Minnesota United FC", "CF Montréal", "Nashville SC", "New England Revolution", "New York City FC", "New York Red Bulls", "Orlando City SC", "Philadelphia Union", "Portland Timbers", "Real Salt Lake", "San Jose Earthquakes", "Seattle Sounders FC", "Sporting Kansas City", "St. Louis City SC", "Toronto FC", "Vancouver Whitecaps FC"
+]
+
+equipos_liga_portugal_2026_27 = [
+    "Académico de Viseu", "Casa Pia AC", "CD Nacional", "CD Santa Clara", 
+    "CF Estrela da Amadora", "CS Marítimo", "FC Alverca", "FC Arouca", 
+    "FC Famalicão", "FC Porto", "GD Estoril Praia", "Gil Vicente FC", 
+    "Moreirense FC", "Rio Ave FC", "SC Braga", "SL Benfica", 
+    "Sporting CP", "Vitória SC"
+]
+
+EQUIPOS_POR_LIGA = {
+    "Liga Portugal": equipos_liga_portugal_2026_27,
+    "Liga MX": equipos_mx_2026,
+    "MLS": equipos_mls_2026,
+    "Leagues Cup": sorted(equipos_mx_2026 + equipos_mls_2026),
+    "Liga de Expansión MX": ["Alebrijes de Oaxaca", "Atlante FC", "Atlético Morelia", "Cancún FC", "Celaya FC", "Correcaminos UAT", "Dorados de Sinaloa", "Leones Negros UdeG", "Mineros de Zacatecas", "Tepatitlán FC", "Tlaxcala FC", "Venados FC", "CD Tapatío"],
+    "Liga MX U-21": [e + " U-21" for e in equipos_mx_2026],
+    "Liga MX U-19": [e + " U-19" for e in equipos_mx_2026],
+    "Liga MX U-17": [e + " U-17" for e in equipos_mx_2026],
+    "Liga MX U-15": [e + " U-15" for e in equipos_mx_2026],
+    "La Liga": ["Athletic Club", "Club Atlético de Madrid", "CA Osasuna", "CD Leganés", "Deportivo Alavés", "Elche CF", "FC Barcelona", "Getafe CF", "Girona FC", "Levante UD", "RCD Espanyol", "Rayo Vallecano", "Real Betis", "Real Celta Vigo", "Real Madrid", "Real Oviedo", "Real Sociedad", "Sevilla FC", "Valencia CF", "Villarreal CF"],
+    "Premier League": ["Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", "Brighton & Hove Albion", "Chelsea FC", "Crystal Palace", "Everton FC", "Fulham FC", "Ipswich Town", "Leeds United", "Liverpool FC", "Manchester City", "Manchester United", "Newcastle United", "Nottingham Forest", "Sunderland AFC", "Tottenham Hotspur", "West Ham United", "Wolverhampton Wanderers"],
+    "Allsvenskan": ["AIK", "BK Häcken", "Djurgárdens IF", "GAIS", "Halmstads BK", "Hammarby IF", "IF Brommapojkarna", "IF Elfsborg", "IFK Göteborg", "IFK Norrköping", "IK Sirius", "Kalmar FF", "Malmö FF", "Mjällby AIF", "Västerås SK"]
+}
 
 # 5. MOSTRAR PERFIL
 def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
@@ -309,7 +407,6 @@ def mostrar_perfil_jugador(jugador, tabla_origen, idx_origen):
                 
                 df_partidos_torneo = df_partidos[df_partidos['liga'] == torneo_f]
                 
-                # Leemos la fecha y marcador escondidos en m_data
                 partidos_lista = []
                 for _, row in df_partidos_torneo.iterrows():
                     m_tmp = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
@@ -662,7 +759,6 @@ else:
                     
                 n_jornada = c1.selectbox("Jornada / Fase del Juego", JORNADAS_OPCIONES, key="p_jornada_input")
                 
-                # BOTONES DE ESTATUS RÁPIDO DE PARTICIPACIÓN
                 estatus_part = st.radio("Estatus de Participación del Jugador", ["Jugó (Titular / Cambio)", "Sin Participación (En Banca)", "No Convocado"], horizontal=True, key="p_estatus_part")
                 
                 if estatus_part == "Jugó (Titular / Cambio)":
@@ -700,7 +796,6 @@ else:
                     
                     if st.form_submit_button("Guardar Partido en Supabase"):
                         if n_jugador and supabase:
-                            # GUARDAR FECHA Y MARCADOR DENTRO DE M_DATA PARA NO ALTERAR LA BD
                             valores_capturados["estatus_participacion"] = estatus_part
                             valores_capturados["fecha"] = str(n_fecha)
                             valores_capturados["marcador"] = n_marcador if n_marcador else "N/D"
@@ -747,7 +842,6 @@ else:
                     df_p_ed = consultar_partidos_jugador(j_ed_sel)
                     
                     if not df_p_ed.empty:
-                        # Extraer fecha y marcador de m_data para mostrar en la lista desplegable
                         partidos_lista_ed = []
                         for _, row in df_p_ed.iterrows():
                             m_tmp = row.get('m_data') if isinstance(row.get('m_data'), dict) else {}
